@@ -24,4 +24,8 @@ Route.get('/', async () => {
   return { hello: 'world' }
 })
 
-Route.post('/user', 'UsersController.store')
+Route.group(() => {
+  Route.group(() => {
+    Route.post('', 'UsersController.store')
+  }).prefix('/users')
+}).prefix('/api/v1')
