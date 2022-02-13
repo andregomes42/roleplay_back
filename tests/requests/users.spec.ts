@@ -7,14 +7,6 @@ import { UserFactory } from 'Database/factories/user'
 const BASE_URL = `http://${process.env.HOST }:${process.env.PORT}/api/v1`
 
 test.group('Users', (group) => {
-    group.beforeEach(async () => {
-        await Database.beginGlobalTransaction()
-    })
-
-    group.afterEach(async () => {
-        await Database.rollbackGlobalTransaction()
-    })
-
     test('it POST /users', async (assert) => {
         const user = await UserFactory.makeStubbed()
         const { body } = await supertest(BASE_URL).post('/users').send(user).expect(201)
@@ -154,5 +146,13 @@ test.group('Users', (group) => {
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    group.beforeEach(async () => {
+        await Database.beginGlobalTransaction()
+    })
+
+    group.afterEach(async () => {
+        await Database.rollbackGlobalTransaction()
     })
 })
