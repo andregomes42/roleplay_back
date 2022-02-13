@@ -26,4 +26,10 @@ test.group('Users', (group) => {
         const fakeUser = await UserFactory.merge({ email: user.email }).makeStubbed()
         const { body } = await supertest(BASE_URL).post('/users').send(fakeUser).expect(409)
     })
+
+    test('it return 409 when username is arelady in use', async(assert) => {
+        const user = await UserFactory.create()
+        const fakeUser = await UserFactory.merge({ username: user.username }).makeStubbed()
+        const { body } = await supertest(BASE_URL).post('/users').send(fakeUser).expect(409)
+    })
 })
