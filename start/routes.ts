@@ -27,5 +27,6 @@ Route.get('/', async () => {
 Route.group(() => {
   Route.group(() => {
     Route.post('', 'UsersController.store')
+    Route.put('/:user', 'UsersController.update')
   }).prefix('/users')
 }).prefix('/api/v1')
