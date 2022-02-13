@@ -1,10 +1,11 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import BadRequest from 'App/Exceptions/BadRequestException'
+import StoreUser from 'App/Validators/StoreUserValidator'
 import User from 'App/Models/User'
 
 export default class UsersController {
     public async store({request, response}: HttpContextContract) {
-        const payload = request.only(['email', 'password', 'username', 'avatar'])
+        const payload = await request.validate(StoreUser)
 
         if(await User.findBy('email', payload.email))
             throw new BadRequest('email is arealdy in use', 409)
