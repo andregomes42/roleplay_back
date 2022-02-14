@@ -252,6 +252,26 @@ test.group('Password', (group) => {
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
+    test('it return 404 when using the same token twice', async (assert) => {
+        const user = await UserFactory.create()
+        const random = await promisify(randomBytes)(24)
+        const token = random.toString('hex')
+        await user.related('tokens').create({ token })
+
+        await supertest(BASE_URL).post('/users/reset-password').send({
+            token,
+            password: 'admin123'
+        }).expect(204)
+
+        const { body } = await supertest(BASE_URL).post('/users/reset-password').send({
+            token,
+            password: 'admin123'
+        }).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
     group.beforeEach(async () => {
         await Database.beginGlobalTransaction()
     })

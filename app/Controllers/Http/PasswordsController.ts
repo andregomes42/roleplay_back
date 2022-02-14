@@ -32,10 +32,11 @@ export default class PasswordsController {
         const { token, password } = await request.validate(ResetPassword)
         const user = await User.query().whereHas('tokens', (query) => {
             query.where('token', token)
-        }).firstOrFail()
+        }).preload('tokens').firstOrFail()
 
         user.password = password
         await user.save()
+        await user.tokens[0].delete()
         
         return response.noContent()
     }
