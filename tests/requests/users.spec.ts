@@ -6,6 +6,7 @@ import { UserFactory } from 'Database/factories/user'
 import Mail from '@ioc:Adonis/Addons/Mail'
 import { promisify } from 'util'
 import { randomBytes } from 'crypto'
+import { DateTime, Duration } from 'luxon'
 
 const BASE_URL = `http://${process.env.HOST }:${process.env.PORT}/api/v1`
 
@@ -270,6 +271,23 @@ test.group('Password', (group) => {
 
         assert.equal(body.status, 404)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test.only('it return 410 when use an expired token', async (assert) => {
+        const date = DateTime.now().minus(Duration.fromISOTime('02:01'))
+        const user = await UserFactory.create()
+        const random = await promisify(randomBytes)(24)
+        const token = random.toString('hex')
+        await user.related('tokens').create({ token, createdAt: date })
+
+        const { body } = await supertest(BASE_URL).post('/users/reset-password').send({
+            token,
+            password: 'admin123'
+        }).expect(410)
+
+        assert.equal(body.status, 410)
+        assert.equal(body.code, 'TOKEN_EXPIRED')
+        assert.equal(body.message, 'Token has expired')
     })
 
     group.beforeEach(async () => {
