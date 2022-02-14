@@ -176,6 +176,9 @@ test.group('Password', (group) => {
         }).expect(204)
 
         Mail.restore()
+
+        const tokens = await user.related('tokens').query()
+        assert.isNotEmpty(tokens)
     })
 
     group.beforeEach(async () => {
