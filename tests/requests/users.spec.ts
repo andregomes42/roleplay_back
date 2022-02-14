@@ -181,6 +181,36 @@ test.group('Password', (group) => {
         assert.isNotEmpty(tokens)
     })
 
+    test('it return 422 when no body is provided', async (assert) => {
+        const user = await UserFactory.create()
+        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it return 422 when provides an invalid email', async (assert) => {
+        const user = await UserFactory.create()
+        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({
+            email: user.username,
+            resetPasswordUrl: user.avatar
+        }).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it return 422 when provides an invalid reset password url', async (assert) => {
+        const user = await UserFactory.create()
+        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({
+            email: user.email,
+            resetPasswordUrl: user.username
+        }).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
     group.beforeEach(async () => {
         await Database.beginGlobalTransaction()
     })
