@@ -4,6 +4,8 @@ import supertest from 'supertest'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { UserFactory } from 'Database/factories/user'
 import Mail from '@ioc:Adonis/Addons/Mail'
+import { promisify } from 'util'
+import { randomBytes } from 'crypto'
 
 const BASE_URL = `http://${process.env.HOST }:${process.env.PORT}/api/v1`
 
@@ -170,7 +172,7 @@ test.group('Password', (group) => {
             assert.include(message.html, user.avatar)
         })
         
-        await supertest(BASE_URL).post('/users/forgot/password').send({
+        await supertest(BASE_URL).post('/users/forgot-password').send({
             email: user.email,
             resetPasswordUrl: user.avatar
         }).expect(204)
@@ -183,7 +185,7 @@ test.group('Password', (group) => {
 
     test('it return 422 when no body is provided', async (assert) => {
         const user = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({}).expect(422)
+        const { body } = await supertest(BASE_URL).post('/users/forgot-password').send({}).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -191,7 +193,7 @@ test.group('Password', (group) => {
 
     test('it return 422 when provides an invalid email', async (assert) => {
         const user = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({
+        const { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
             email: user.username,
             resetPasswordUrl: user.avatar
         }).expect(422)
@@ -202,9 +204,48 @@ test.group('Password', (group) => {
 
     test('it return 422 when provides an invalid reset password url', async (assert) => {
         const user = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).post('/users/forgot/password').send({
+        const { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
             email: user.email,
             resetPasswordUrl: user.username
+        }).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it POST /users/reset-password', async (assert) => {
+        const user = await UserFactory.create()
+        const random = await promisify(randomBytes)(24)
+        const token = random.toString('hex')
+        await user.related('tokens').create({ token })
+
+        await supertest(BASE_URL).post('/users/reset-password').send({
+            token,
+            password: 'admin123'
+        }).expect(204)
+
+        await user.refresh()
+        assert.isTrue(await Hash.verify(user.password, 'admin123'))
+    })
+
+    test('it return 422 when no body is provided', async (assert) => {
+        const user = await UserFactory.create()
+        const { body } = await supertest(BASE_URL).post('/users/reset-password').send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it return 422 when provides an invalid password', async (assert) => {
+        const fakeUser = await UserFactory.apply('password').makeStubbed()
+        const user = await UserFactory.create()
+        const random = await promisify(randomBytes)(24)
+        const token = random.toString('hex')
+        await user.related('tokens').create({ token })
+
+        const { body } = await supertest(BASE_URL).post('/users/reset-password').send({
+            token,
+            password: fakeUser.password
         }).expect(422)
 
         assert.equal(body.status, 422)
