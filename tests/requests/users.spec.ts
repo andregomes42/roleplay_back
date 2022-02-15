@@ -12,7 +12,6 @@ const BASE_URL = `http://${process.env.HOST }:${process.env.PORT}/api/v1`
 
 let user
 let makeUser
-let fakeUser
 let random
 let token
 let date
@@ -23,11 +22,12 @@ test.group('Users', (group) => {
         user = await UserFactory.create()
     })  
 
-    test.only('it POST /users', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/users').send(user).expect(201)
+    test('it POST /users', async (assert) => {
+        makeUser = await UserFactory.makeStubbed()
+        const { body } = await supertest(BASE_URL).post('/users').send(makeUser).expect(201)
 
-        assert.equal(body.user.username, user.username)
-        assert.equal(body.user.email, user.email)
+        assert.equal(body.user.username, makeUser.username)
+        assert.equal(body.user.email, makeUser.email)
     })
 
     test('it return 409 when email is arelady in use', async(assert) => {
@@ -90,10 +90,10 @@ test.group('Users', (group) => {
         await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(200)
         await user.refresh()
 
-        assert.isTrue(await Hash.verify(user.password, fakeUser.password))
-        assert.equal(user.email, fakeUser.email)
-        assert.equal(user.avatar, fakeUser.avatar)
-        assert.equal(user.username, fakeUser.username)
+        assert.isTrue(await Hash.verify(user.password, makeUser.password))
+        assert.equal(user.email, makeUser.email)
+        assert.equal(user.avatar, makeUser.avatar)
+        assert.equal(user.username, makeUser.username)
     })
 
     test('it return 409 when email is already in use', async (assert) => {
