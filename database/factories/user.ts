@@ -1,5 +1,6 @@
 import User  from 'App/Models/User';
 import Factory from '@ioc:Adonis/Lucid/Factory'
+const { faker } = require('@faker-js/faker');
 
 export const UserFactory = Factory.define(User, ({ faker }) => {
     return {
@@ -8,4 +9,8 @@ export const UserFactory = Factory.define(User, ({ faker }) => {
         password: faker.internet.password(),
         avatar: faker.internet.url()
     }
-}).build()
+})
+    .state('email', (user) => user.email = faker.name.findName())
+    .state('avatar', (user) => user.avatar = faker.word.verb())
+    .state('username', (user) => user.username = faker.name.middleName())
+    .state('password', (user) => user.password = faker.name.middleName()).build()
