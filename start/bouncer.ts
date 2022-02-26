@@ -1,3 +1,4 @@
+import User from 'App/Models/User';
 /**
  * Contract source: https://git.io/Jte3T
  *
@@ -29,7 +30,9 @@ import Bouncer from '@ioc:Adonis/Addons/Bouncer'
 | NOTE: Always export the "actions" const from this file
 |****************************************************************
 */
-export const { actions } = Bouncer
+export const { actions } = Bouncer.define('userUpdate', (user: User, updatedUser: User) => {
+    return user.id === updatedUser.id
+})
 
 /*
 |--------------------------------------------------------------------------

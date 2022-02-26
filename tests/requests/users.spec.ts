@@ -20,10 +20,9 @@ let password = '123'
 test.group('Users', (group) => {
     group.beforeEach(async () => {
         await Database.beginGlobalTransaction()
-        user = await UserFactory.create()
+        user = await UserFactory.merge({ password }).create()
 
-        const { email } = await UserFactory.merge({ password }).create()
-        const { body } = await supertest(BASE_URL).post('/login').send({ email, password }).expect(201)
+        const { body } = await supertest(BASE_URL).post('/login').send({email: user.email, password }).expect(201)
         token = body.token.token
     })  
 
@@ -103,10 +102,29 @@ test.group('Users', (group) => {
         assert.equal(user.username, makeUser.username)
     })
 
-    test('it return 409 when email is already in use', async (assert) => {
-        makeUser = await UserFactory.merge({email: user.email}).makeStubbed()
+    test('it return 401 when user is not authenticated', async (assert) => {
+       const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .send(makeUser).expect(401)
+
+        assert.equal(body.status, 401)
+        assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 403 when user has no permission to the action', async (assert) => {
+        makeUser = await UserFactory.makeStubbed()
         const secondUser = await UserFactory.create()
         const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(403)
+
+        assert.equal(body.status, 403)
+        assert.equal(body.code, 'FORBIDDEN_ACCESS')
+    })
+
+    test('it return 409 when email is already in use', async (assert) => {
+        const secondUser = await UserFactory.create()
+        makeUser = await UserFactory.merge({email: secondUser.email}).makeStubbed()
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
             .set('Authorization', `Bearer ${token}`)
             .send(makeUser).expect(409)
 
@@ -115,9 +133,9 @@ test.group('Users', (group) => {
     })
 
     test('it return 409 when username is already in use', async (assert) => {
-        makeUser = await UserFactory.merge({username: user.username}).makeStubbed()
         const secondUser = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`)
+        makeUser = await UserFactory.merge({username: secondUser.username}).makeStubbed()
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
             .set('Authorization', `Bearer ${token}`)
             .send(makeUser).expect(409)
 
