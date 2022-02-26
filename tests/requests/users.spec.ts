@@ -15,6 +15,7 @@ let makeUser
 let random
 let token
 let date
+let password = '123'
 
 test.group('Users', (group) => {
     group.beforeEach(async () => {
@@ -274,6 +275,50 @@ test.group('Password', (group) => {
         assert.equal(body.status, 410)
         assert.equal(body.code, 'TOKEN_EXPIRED')
         assert.equal(body.message, 'Token has expired')
+    })
+
+    group.afterEach(async () => {
+        await Database.rollbackGlobalTransaction()
+    })
+})
+
+test.group('Authentication', (group) => {
+    group.beforeEach(async () => {
+        await Database.beginGlobalTransaction()
+        user = await UserFactory.merge({ password }).create()
+    })  
+
+    test('it POST /login', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password }).expect(201)
+
+        assert.isDefined(body.user, 'User undefined')
+        assert.equal(body.user.id, user.id)
+        assert.isDefined(body.token, 'Token undefined')
+    })
+
+    test('it return 400 when provides an incorrect email', async (assert) => {
+        makeUser = await UserFactory.makeStubbed()
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: makeUser.email, password }).expect(400)
+
+        assert.equal(body.status, 400)
+        assert.equal(body.code, 'BAD_REQUEST')
+        assert.equal(body.message, 'Invalid credentials')
+
+    })
+
+    test.only('it return 400 when provides an incorrect password', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password: user.password }).expect(400)
+
+        assert.equal(body.status, 400)
+        assert.equal(body.code, 'BAD_REQUEST')
+        assert.equal(body.message, 'Invalid credentials')
+    })
+
+    test('it return 422 when no body is provided', async (assert) => {
+       const { body } = await supertest(BASE_URL).post('/login').send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
     })
 
     group.afterEach(async () => {
