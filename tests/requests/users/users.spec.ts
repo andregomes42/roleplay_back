@@ -28,8 +28,8 @@ test.group('Users', (group) => {
         const { body } = await supertest(BASE_URL).post('/users')
             .send(makeUser).expect(201)
 
-        assert.equal(body.user.username, makeUser.username)
-        assert.equal(body.user.email, makeUser.email)
+        assert.equal(body.username, makeUser.username)
+        assert.equal(body.email, makeUser.email)
     })
 
     test('it return 409 when email is arelady in use', async(assert) => {

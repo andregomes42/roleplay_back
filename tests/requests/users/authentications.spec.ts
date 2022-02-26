@@ -4,7 +4,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 const { faker } = require('@faker-js/faker');
 import { UserFactory } from 'Database/factories/user'
 
-const BASE_URL = `http://${process.env.HOST }:${process.env.PORT}/api/v1`
+const BASE_URL = `http://${ process.env.HOST }:${ process.env.PORT }/api/v1`
 
 let user
 let makeUser
@@ -67,4 +67,3 @@ test.group('Authentications', (group) => {
         await Database.rollbackGlobalTransaction()
     })
 })
-

@@ -15,7 +15,7 @@ export default class UsersController {
             throw new BadRequest('username is arealdy in use', 409)
 
         const user = await User.create(payload)
-        return response.created({ user })
+        return response.created(user)
     }
 
     public async update({ request, response, bouncer }: HttpContextContract) {
@@ -36,6 +36,6 @@ export default class UsersController {
         payload.password ? user.password = payload.password : false
         await user.save()
 
-        return response.ok({ user })
+        return response.ok(user)
     }
 }

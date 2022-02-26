@@ -14,7 +14,7 @@ export default class PasswordsController {
 
         const random = await promisify(randomBytes)(24)
         const token = random.toString('hex')
-        await user.related('tokens').updateOrCreate({ userId: user.id }, { token }) 
+        await user.related('tokens').updateOrCreate({ user_id: user.id }, { token }) 
         
         const resetPasswordUrlWithToken = `${ resetPasswordUrl }?token=${ token }`
         await Mail.send((message) => {
