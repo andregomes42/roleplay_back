@@ -15,11 +15,15 @@ let makeUser
 let random
 let token
 let date
+let password = '123'
 
 test.group('Users', (group) => {
     group.beforeEach(async () => {
         await Database.beginGlobalTransaction()
-        user = await UserFactory.create()
+        user = await UserFactory.merge({ password }).create()
+
+        const { body } = await supertest(BASE_URL).post('/login').send({email: user.email, password }).expect(201)
+        token = body.token.token
     })  
 
     test('it POST /users', async (assert) => {
@@ -87,7 +91,9 @@ test.group('Users', (group) => {
 
     test('it PUT /users/:user', async (assert) => {
         makeUser = await UserFactory.makeStubbed()
-        await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(200)
+        await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(200)
         await user.refresh()
 
         assert.isTrue(await Hash.verify(user.password, makeUser.password))
@@ -96,26 +102,51 @@ test.group('Users', (group) => {
         assert.equal(user.username, makeUser.username)
     })
 
-    test('it return 409 when email is already in use', async (assert) => {
-        makeUser = await UserFactory.merge({email: user.email}).makeStubbed()
+    test('it return 401 when user is not authenticated', async (assert) => {
+       const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .send(makeUser).expect(401)
+
+        assert.equal(body.status, 401)
+        assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 403 when user has no permission to the action', async (assert) => {
+        makeUser = await UserFactory.makeStubbed()
         const secondUser = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`).send(makeUser).expect(409)
+        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(403)
+
+        assert.equal(body.status, 403)
+        assert.equal(body.code, 'FORBIDDEN_ACCESS')
+    })
+
+    test('it return 409 when email is already in use', async (assert) => {
+        const secondUser = await UserFactory.create()
+        makeUser = await UserFactory.merge({email: secondUser.email}).makeStubbed()
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(409)
 
         assert.equal(body.status, 409)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 409 when username is already in use', async (assert) => {
-        makeUser = await UserFactory.merge({username: user.username}).makeStubbed()
         const secondUser = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`).send(makeUser).expect(409)
+        makeUser = await UserFactory.merge({username: secondUser.username}).makeStubbed()
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(409)
 
         assert.equal(body.status, 409)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send({}).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({}).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -123,7 +154,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid email', async (assert) => {
         makeUser = await UserFactory.apply('email').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -131,7 +164,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid avatar', async (assert) => {
         makeUser = await UserFactory.apply('avatar').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -139,7 +174,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid username', async (assert) => {
         makeUser = await UserFactory.apply('username').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -147,7 +184,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid password', async (assert) => {
         makeUser = await UserFactory.apply('password').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -274,6 +313,60 @@ test.group('Password', (group) => {
         assert.equal(body.status, 410)
         assert.equal(body.code, 'TOKEN_EXPIRED')
         assert.equal(body.message, 'Token has expired')
+    })
+
+    group.afterEach(async () => {
+        await Database.rollbackGlobalTransaction()
+    })
+})
+
+test.group('Authentication', (group) => {
+    group.beforeEach(async () => {
+        await Database.beginGlobalTransaction()
+        user = await UserFactory.merge({ password }).create()
+    })  
+
+    test('it POST /login', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password }).expect(201)
+
+        assert.isDefined(body.user, 'User undefined')
+        assert.equal(body.user.id, user.id)
+        assert.isDefined(body.token, 'Token undefined')
+    })
+
+    test('it return 400 when provides an incorrect email', async (assert) => {
+        makeUser = await UserFactory.makeStubbed()
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: makeUser.email, password }).expect(400)
+
+        assert.equal(body.status, 400)
+        assert.equal(body.code, 'BAD_REQUEST')
+        assert.equal(body.message, 'Invalid credentials')
+
+    })
+
+    test('it return 400 when provides an incorrect password', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password: user.password }).expect(400)
+
+        assert.equal(body.status, 400)
+        assert.equal(body.code, 'BAD_REQUEST')
+        assert.equal(body.message, 'Invalid credentials')
+    })
+
+    test('it return 422 when no body is provided', async (assert) => {
+       const { body } = await supertest(BASE_URL).post('/login').send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it POST /logout', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password }).expect(201)
+        const apiToken = body.token
+
+        await supertest(BASE_URL).delete('/logout').set('Authorization', `Bearer ${apiToken.token}`).expect(200)
+        const token = await Database.query().select('*').from('api_tokens')
+
+        assert.isEmpty(token)
     })
 
     group.afterEach(async () => {

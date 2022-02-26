@@ -18,9 +18,11 @@ export default class UsersController {
         return response.created({ user })
     }
 
-    public async update({request, response}: HttpContextContract) {
+    public async update({request, response, bouncer}: HttpContextContract) {
         const payload = await request.validate(UpdateUser)
         const user = await User.findOrFail(request.param('user'))
+
+        await bouncer.authorize('userUpdate', user)
 
          if(await User.findBy('email', payload.email))
             throw new BadRequest('email is arealdy in use', 409)
