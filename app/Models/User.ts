@@ -1,3 +1,4 @@
+import Group from 'App/Models/Group';
 import { DateTime } from 'luxon'
 import { BaseModel, beforeSave, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Hash from '@ioc:Adonis/Core/Hash'
@@ -25,8 +26,11 @@ export default class User extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
 
-  @hasMany(() => LinkToken, { foreignKey: 'userId' })
+  @hasMany(() => LinkToken, { foreignKey: 'user_id' })
   public tokens: HasMany<typeof LinkToken>
+
+  @hasMany(() => Group, { foreignKey: 'master_id' })
+  public groups: HasMany<typeof Group>
 
   @beforeSave()
   public static async hashPassword(user: User) {
