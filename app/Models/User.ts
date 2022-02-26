@@ -1,4 +1,4 @@
-import Group from 'App/Models/Group';
+import Dungeon from 'App/Models/Dungeon';
 import { DateTime } from 'luxon'
 import { BaseModel, beforeSave, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Hash from '@ioc:Adonis/Core/Hash'
@@ -29,8 +29,8 @@ export default class User extends BaseModel {
   @hasMany(() => LinkToken, { foreignKey: 'user_id' })
   public tokens: HasMany<typeof LinkToken>
 
-  @hasMany(() => Group, { foreignKey: 'master_id' })
-  public groups: HasMany<typeof Group>
+  @hasMany(() => Dungeon, { foreignKey: 'master_id' })
+  public dungeons: HasMany<typeof Dungeon>
 
   @beforeSave()
   public static async hashPassword(user: User) {

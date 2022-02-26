@@ -36,6 +36,6 @@ Route.group(() => {
   Route.delete('/logout', 'AuthController.logout')
 
   Route.group(() => {
-    Route.post('', 'GroupsController.store')
-  }).middleware('auth').prefix('/groups')
+    Route.post('', 'DungeonsController.store')
+  }).middleware('auth').prefix('/dungeons')
 }).prefix('/api/v1')

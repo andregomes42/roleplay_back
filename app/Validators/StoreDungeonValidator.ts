@@ -1,7 +1,7 @@
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class StoreGroupValidator {
+export default class StoreDungeonValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
