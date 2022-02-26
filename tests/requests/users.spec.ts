@@ -21,6 +21,10 @@ test.group('Users', (group) => {
     group.beforeEach(async () => {
         await Database.beginGlobalTransaction()
         user = await UserFactory.create()
+
+        const { email } = await UserFactory.merge({ password }).create()
+        const { body } = await supertest(BASE_URL).post('/login').send({ email, password }).expect(201)
+        token = body.token.token
     })  
 
     test('it POST /users', async (assert) => {
@@ -88,7 +92,9 @@ test.group('Users', (group) => {
 
     test('it PUT /users/:user', async (assert) => {
         makeUser = await UserFactory.makeStubbed()
-        await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(200)
+        await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(200)
         await user.refresh()
 
         assert.isTrue(await Hash.verify(user.password, makeUser.password))
@@ -100,7 +106,9 @@ test.group('Users', (group) => {
     test('it return 409 when email is already in use', async (assert) => {
         makeUser = await UserFactory.merge({email: user.email}).makeStubbed()
         const secondUser = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`).send(makeUser).expect(409)
+        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(409)
 
         assert.equal(body.status, 409)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -109,14 +117,18 @@ test.group('Users', (group) => {
     test('it return 409 when username is already in use', async (assert) => {
         makeUser = await UserFactory.merge({username: user.username}).makeStubbed()
         const secondUser = await UserFactory.create()
-        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`).send(makeUser).expect(409)
+        const { body } = await supertest(BASE_URL).put(`/users/${secondUser.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(409)
 
         assert.equal(body.status, 409)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send({}).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({}).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -124,7 +136,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid email', async (assert) => {
         makeUser = await UserFactory.apply('email').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -132,7 +146,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid avatar', async (assert) => {
         makeUser = await UserFactory.apply('avatar').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -140,7 +156,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid username', async (assert) => {
         makeUser = await UserFactory.apply('username').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -148,7 +166,9 @@ test.group('Users', (group) => {
 
     test('it return 422 when provides an invalid password', async (assert) => {
         makeUser = await UserFactory.apply('password').makeStubbed()
-        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`).send(makeUser).expect(422)
+        const { body } = await supertest(BASE_URL).put(`/users/${user.id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(makeUser).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -321,7 +341,7 @@ test.group('Authentication', (group) => {
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test.only('it POST /logout', async (assert) => {
+    test('it POST /logout', async (assert) => {
         const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password }).expect(201)
         const apiToken = body.token
 

@@ -27,7 +27,7 @@ Route.get('/', async () => {
 Route.group(() => {
   Route.group(() => {
     Route.post('', 'UsersController.store')
-    Route.put('/:user', 'UsersController.update')
+    Route.put('/:user', 'UsersController.update').middleware('auth')
     Route.post('/forgot-password', 'PasswordsController.forgot')
     Route.post('/reset-password', 'PasswordsController.reset')
   }).prefix('/users')
