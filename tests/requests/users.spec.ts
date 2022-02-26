@@ -306,7 +306,7 @@ test.group('Authentication', (group) => {
 
     })
 
-    test.only('it return 400 when provides an incorrect password', async (assert) => {
+    test('it return 400 when provides an incorrect password', async (assert) => {
         const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password: user.password }).expect(400)
 
         assert.equal(body.status, 400)
@@ -319,6 +319,16 @@ test.group('Authentication', (group) => {
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test.only('it POST /logout', async (assert) => {
+        const { body } = await supertest(BASE_URL).post('/login').send({ email: user.email, password }).expect(201)
+        const apiToken = body.token
+
+        await supertest(BASE_URL).delete('/logout').set('Authorization', `Bearer ${apiToken.token}`).expect(200)
+        const token = await Database.query().select('*').from('api_tokens')
+
+        assert.isEmpty(token)
     })
 
     group.afterEach(async () => {

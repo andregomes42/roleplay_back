@@ -32,5 +32,6 @@ Route.group(() => {
     Route.post('/reset-password', 'PasswordsController.reset')
   }).prefix('/users')
 
-  Route.post('/login', 'SessionsController.login')
+  Route.post('/login', 'AuthController.login')
+  Route.delete('/logout', 'AuthController.logout')
 }).prefix('/api/v1')
