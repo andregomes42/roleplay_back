@@ -8,15 +8,15 @@ import ResetPassword from 'App/Validators/ResetPasswordValidator'
 import TokenExpired from 'App/Exceptions/TokenExpiredException'
 
 export default class PasswordsController {
-    public async forgot({request, response}: HttpContextContract) {
+    public async forgot({ request, response }: HttpContextContract) {
         const { email, resetPasswordUrl } = await request.validate(ForgotPassword)
         const user = await User.findByOrFail('email', email)
 
         const random = await promisify(randomBytes)(24)
         const token = random.toString('hex')
-        await user.related('tokens').updateOrCreate({userId: user.id}, {token}) 
+        await user.related('tokens').updateOrCreate({ userId: user.id }, { token }) 
         
-        const resetPasswordUrlWithToken = `${resetPasswordUrl}?token=${token}`
+        const resetPasswordUrlWithToken = `${ resetPasswordUrl }?token=${ token }`
         await Mail.send((message) => {
             message.from('no-reply@roleplay.com').to(email)
             .subject('Roleplay: Reset password').htmlView('emails/forgot_password', {
@@ -29,7 +29,7 @@ export default class PasswordsController {
         return response.noContent()
     }
 
-    public async reset({request, response}: HttpContextContract) {
+    public async reset({ request, response }: HttpContextContract) {
         const { token, password } = await request.validate(ResetPassword)
         const user = await User.query().whereHas('tokens', (query) => {
             query.where('token', token)
