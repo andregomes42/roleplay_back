@@ -23,12 +23,11 @@ test.group('Dungeons', (group) => {
         token = body.token.token
     })
 
-    test.only('it POST /dungeons', async (assert) => {
+    test('it POST /dungeons', async (assert) => {
         makeDungeon = await DungeonFactory.makeStubbed()
         const { body } = await supertest(BASE_URL).post('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
             .send(makeDungeon).expect(201)
-        console.log(body)
 
         assert.equal(body.master_id, user.id)
         assert.equal(body.name, makeDungeon.name)
@@ -102,5 +101,11 @@ test.group('Dungeons', (group) => {
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    group.afterEach(async () => {
+        await supertest(BASE_URL).delete('/logout')
+            .set('Authorization', `Bearer ${ token }`)
+        await Database.rollbackGlobalTransaction()
     })
 })

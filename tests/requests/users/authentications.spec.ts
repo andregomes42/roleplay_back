@@ -7,6 +7,7 @@ import { UserFactory } from 'Database/factories/user'
 const BASE_URL = `http://${ process.env.HOST }:${ process.env.PORT }/api/v1`
 
 let user
+let apiToken
 let makeUser
 let password 
 
@@ -15,6 +16,10 @@ test.group('Authentications', (group) => {
         password = faker.internet.password()
         await Database.beginGlobalTransaction()
         user = await UserFactory.merge({ password }).create()
+
+        const { body } = await supertest(BASE_URL).post('/login')
+            .send({ email: user.email, password }).expect(201)
+        apiToken = body.token.token
     })  
 
     test('it POST /login', async (assert) => {
@@ -52,10 +57,6 @@ test.group('Authentications', (group) => {
     })
 
     test('it POST /logout', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/login')
-            .send({ email: user.email, password }).expect(201)
-        const apiToken = body.token.token
-
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ apiToken }`).expect(200)
         const token = await Database.query().select('*').from('api_tokens')
@@ -64,6 +65,8 @@ test.group('Authentications', (group) => {
     })
 
     group.afterEach(async () => {
+        await supertest(BASE_URL).delete('/logout')
+            .set('Authorization', `Bearer ${ apiToken }`)
         await Database.rollbackGlobalTransaction()
     })
 })

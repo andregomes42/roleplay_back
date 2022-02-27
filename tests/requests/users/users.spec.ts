@@ -198,6 +198,8 @@ test.group('Users', (group) => {
     })
 
     group.afterEach(async () => {
+        await supertest(BASE_URL).delete('/logout')
+            .set('Authorization', `Bearer ${ token }`)
         await Database.rollbackGlobalTransaction()
     })
 })
