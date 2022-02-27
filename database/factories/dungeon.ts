@@ -6,10 +6,10 @@ const { faker } = require('@faker-js/faker');
 export const DungeonFactory = Factory.define(Dungeon, ({ faker }) => {
     return {
         name: faker.company.companyName(),
-        chronic: faker.lorem.paragraphs(),
+        chronic: faker.lorem.sentence(),
         schedule: faker.date.weekday(),
-        location: faker.address.streetAddress(),
-        description: faker.commerce.productDescription()
+        location: faker.internet.url(),
+        description: faker.lorem.paragraph()
     }
 })
     .relation('players', () => UserFactory)

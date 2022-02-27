@@ -27,7 +27,7 @@ export default class StoreDungeonValidator {
     name: schema.string({}, [rules.minLength(3)]),
     chronic: schema.string({}, [rules.minLength(3)]),
     schedule: schema.string({}, [rules.minLength(3)]),
-    location: schema.string({}, [rules.minLength(3)]),
+    location: schema.string({}, [rules.minLength(3), rules.url()]),
     description: schema.string({}, [rules.minLength(3)])
   })
 
