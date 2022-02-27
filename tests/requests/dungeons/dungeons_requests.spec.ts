@@ -1,3 +1,4 @@
+import { beforeSave } from '@ioc:Adonis/Lucid/Orm';
 import test from 'japa'
 import supertest from 'supertest'
 import Database from '@ioc:Adonis/Lucid/Database'
@@ -82,6 +83,73 @@ test.group('Dungeons Requests', (group) => {
         assert.equal(body.status, 409)
         assert.equal(body.code, 'BAD_REQUEST')
         assert.equal(body.message, 'User is already in the dungeon')
+    })
+
+    test('it GET /dungeons/:dungeon/requests', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        const sUser = await UserFactory.merge({ password }).create()
+
+        const response = await supertest(BASE_URL).post('/login')
+            .send({ email: sUser.email, password }).expect(201)
+        const apiToken = response.body.token.token
+
+        await supertest(BASE_URL).post(`/dungeons/${ dungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ apiToken }`)
+            .send({}).expect(201)
+
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ dungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(200)
+
+        assert.equal(body[0].status, 'PENDING')
+        assert.equal(body[0].user_id, sUser.id)
+        assert.equal(body[0].dungeon_id, dungeon.id)
+    })
+
+    test('it return an empty list when master has no dungeon request', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ dungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(200)
+
+        assert.equal(body.length, 0)
+    })
+
+    test('it return 401 when user is not authenticated', async (assert) => {
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ dungeon.id }/requests`)
+            .send({}).expect(401)
+
+        assert.equal(body.status, 401)
+        assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 404 when user is not the dungeon master', async (assert) => {
+        const sUser = await UserFactory.merge({ password }).create()
+
+        const response = await supertest(BASE_URL).post('/login')
+            .send({ email: sUser.email, password }).expect(201)
+        const apiToken = response.body.token.token
+
+        await supertest(BASE_URL).post(`/dungeons/${ dungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ apiToken }`)
+            .send({}).expect(201)
+
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ dungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
+    test('it return 404 when dungeons is not persisted', async (assert) => {
+        makeDungeon = await DungeonFactory.merge({ master_id: user.id }).makeStubbed()
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ makeDungeon.id }/requests`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
     })
 
     group.afterEach(async () => {

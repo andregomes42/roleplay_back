@@ -4,6 +4,20 @@ import Dungeon from 'App/Models/Dungeon'
 import DungeonRequest from 'App/Models/DungeonRequest'
 
 export default class DungeonsRequestsController {
+    public async index({ request, response, auth }: HttpContextContract) {
+        const dungeon_id = request.param('dungeon')
+        const user_id = auth.user!.id
+
+        const dungeon = await Dungeon.findOrFail(dungeon_id)
+        if(dungeon.master_id !== user_id) throw new BadRequest('Resource not found', 404)
+
+        const solicitation = await DungeonRequest.query().whereHas('dungeon', (query) => {
+            query.where('master_id', user_id).andWhere('id', dungeon_id)
+        }).where('status', 'PENDING')
+
+        return response.ok(solicitation)
+    }
+
     public async store({ request, response, auth }: HttpContextContract) {
         const dungeon_id = request.param('dungeon')
         const user_id = auth.user!.id
