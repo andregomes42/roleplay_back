@@ -1,6 +1,6 @@
 import Dungeon from 'App/Models/Dungeon';
 import { DateTime } from 'luxon'
-import { BaseModel, beforeSave, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, beforeSave, column, HasMany, hasMany, ManyToMany, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import Hash from '@ioc:Adonis/Core/Hash'
 import LinkToken from './LinkToken'
 
@@ -29,8 +29,8 @@ export default class User extends BaseModel {
   @hasMany(() => LinkToken, { foreignKey: 'user_id' })
   public tokens: HasMany<typeof LinkToken>
 
-  @hasMany(() => Dungeon, { foreignKey: 'master_id' })
-  public dungeons: HasMany<typeof Dungeon>
+  @manyToMany(() => Dungeon, { pivotTable: 'dungeons_users' })
+  public dungeons: ManyToMany<typeof Dungeon>
 
   @beforeSave()
   public static async hashPassword(user: User) {
