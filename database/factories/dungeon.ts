@@ -1,5 +1,6 @@
 import Dungeon  from 'App/Models/Dungeon';
 import Factory from '@ioc:Adonis/Lucid/Factory'
+import { UserFactory } from './user';
 const { faker } = require('@faker-js/faker');
 
 export const DungeonFactory = Factory.define(Dungeon, ({ faker }) => {
@@ -11,6 +12,8 @@ export const DungeonFactory = Factory.define(Dungeon, ({ faker }) => {
         description: faker.commerce.productDescription()
     }
 })
+    .relation('players', () => UserFactory)
+    .relation('master', () => UserFactory)
     .state('name', (dungeon) => dungeon.name = faker.name.middleName())
     .state('chronic', (dungeon) => dungeon.chronic = faker.name.middleName())
     .state('schedule', (dungeon) => dungeon.schedule = faker.date.future())

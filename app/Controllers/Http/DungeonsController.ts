@@ -13,6 +13,9 @@ export default class DungeonsController {
             location: payload.location,
             description: payload.description
         })
+
+        await dungeon.related('players').attach([ dungeon.master_id ])
+        await dungeon.load('players')
         
         return response.created(dungeon)
     }

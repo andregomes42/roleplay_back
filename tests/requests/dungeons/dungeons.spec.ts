@@ -28,9 +28,11 @@ test.group('Dungeons', (group) => {
         const { body } = await supertest(BASE_URL).post('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
             .send(makeDungeon).expect(201)
+        console.log(body)
 
         assert.equal(body.master_id, user.id)
         assert.equal(body.name, makeDungeon.name)
+        assert.equal(body.players[0].id, user.id)
     })
 
     test('it return 401 when user is not authenticated', async (assert) => {
