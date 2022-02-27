@@ -37,5 +37,6 @@ Route.group(() => {
 
   Route.group(() => {
     Route.post('', 'DungeonsController.store')
+    Route.post('/:dungeon/requests', 'DungeonsRequestsController.store')
   }).middleware('auth').prefix('/dungeons')
 }).prefix('/api/v1')
