@@ -8,7 +8,7 @@ export default class DungeonRequests extends BaseSchema {
       table.increments('id')
       table.integer('user_id').unsigned().references('id').inTable('users').notNullable()
       table.integer('dungeon_id').unsigned().references('id').inTable('dungeons').notNullable()
-      table.enum('status', ['PENDING', 'ACCEPTED']).defaultTo('PENDING').notNullable()
+      table.enum('status', ['pending', 'accepted', 'rejected']).defaultTo('pending').notNullable()
       table.timestamps(true)
     })
   }

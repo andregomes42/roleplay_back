@@ -13,7 +13,7 @@ export default class DungeonsRequestsController {
 
         const solicitation = await DungeonRequest.query().whereHas('dungeon', (query) => {
             query.where('master_id', user_id).andWhere('id', dungeon_id)
-        }).where('status', 'PENDING')
+        }).where('status', 'pending')
 
         return response.ok(solicitation)
     }
