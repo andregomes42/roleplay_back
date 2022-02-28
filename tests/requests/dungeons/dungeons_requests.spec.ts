@@ -14,7 +14,6 @@ let token
 let password
 let dungeon
 let dungeon_request
-let makeDungeon
 
 test.group('Dungeons Requests', (group) => {
     group.beforeEach(async () => {
@@ -48,8 +47,8 @@ test.group('Dungeons Requests', (group) => {
     })
 
     test('it return 404 when dungeons is not persisted', async (assert) => {
-        makeDungeon = await DungeonFactory.with('master').makeStubbed()
-        const { body } = await supertest(BASE_URL).post(`/dungeons/${ makeDungeon.id }/requests`)
+        dungeon = await DungeonFactory.with('master').makeStubbed()
+        const { body } = await supertest(BASE_URL).post(`/dungeons/${ dungeon.id }/requests`)
             .set('Authorization', `Bearer ${ token }`)
             .send({}).expect(404)
 
@@ -97,7 +96,7 @@ test.group('Dungeons Requests', (group) => {
             .set('Authorization', `Bearer ${ token }`)
             .send({}).expect(200)
 
-        assert.equal(body.length, 0)
+        assert.isEmpty(body)
     })
 
     test('it return 401 when user is not authenticated', async (assert) => {
@@ -119,8 +118,8 @@ test.group('Dungeons Requests', (group) => {
     })
 
     test('it return 404 when dungeons is not persisted', async (assert) => {
-        makeDungeon = await DungeonFactory.merge({ master_id: user.id }).makeStubbed()
-        const { body } = await supertest(BASE_URL).get(`/dungeons/${ makeDungeon.id }/requests`)
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).makeStubbed()
+        const { body } = await supertest(BASE_URL).get(`/dungeons/${ dungeon.id }/requests`)
             .set('Authorization', `Bearer ${ token }`)
             .send({}).expect(404)
 
@@ -128,7 +127,7 @@ test.group('Dungeons Requests', (group) => {
         assert.equal(body.message, 'Resource not found')
     })
 
-    test('it POST /dungeons/requests/:dungeon_request?status=accepted', async (assert) => {
+    test('it PATCH /dungeons/requests/:dungeon_request?status=accepted', async (assert) => {
         dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
         dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
         const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=accepted`)
@@ -144,6 +143,22 @@ test.group('Dungeons Requests', (group) => {
         assert.isNotEmpty(dungeon.players)
         assert.equal(dungeon.players.length, 1)
         assert.equal(dungeon.players[0].id, user.id)
+    })
+
+    test('it PATCH /dungeons/requests/:dungeon_request?status=rejected', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=rejected`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(200)
+
+        assert.equal(body.status, 'rejected')
+        assert.equal(body.dungeon_id, dungeon.id)
+        assert.equal(body.dungeon.master_id, user.id)
+
+        await dungeon.load('players')
+
+        assert.isEmpty(dungeon.players)
     })
 
     test('it return 401 when user is not authenticated', async (assert) => {

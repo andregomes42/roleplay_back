@@ -16,7 +16,7 @@ export const DungeonFactory = Factory.define(Dungeon, ({ faker }) => {
     .relation('master', () => UserFactory)
     .state('name', (dungeon) => dungeon.name = faker.name.middleName())
     .state('chronic', (dungeon) => dungeon.chronic = faker.name.middleName())
-    .state('schedule', (dungeon) => dungeon.schedule = faker.date.future())
+    .state('schedule', (dungeon) => dungeon.schedule = faker.address.streetPrefix())
     .state('location', (dungeon) => dungeon.location = faker.address.streetPrefix())
     .state('description', (dungeon) => dungeon.description = faker.name.middleName())
     .build()

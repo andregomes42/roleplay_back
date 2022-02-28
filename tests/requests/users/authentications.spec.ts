@@ -8,7 +8,6 @@ const BASE_URL = `http://${ process.env.HOST }:${ process.env.PORT }/api/v1`
 
 let user
 let apiToken
-let makeUser
 let password 
 
 test.group('Authentications', (group) => {
@@ -32,9 +31,9 @@ test.group('Authentications', (group) => {
     })
 
     test('it return 400 when provides an incorrect email', async (assert) => {
-        makeUser = await UserFactory.makeStubbed()
+        user = await UserFactory.makeStubbed()
         const { body } = await supertest(BASE_URL).post('/login')
-            .send({ email: makeUser.email, password }).expect(400)
+            .send({ email: user.email, password }).expect(400)
 
         assert.equal(body.status, 400)
         assert.equal(body.code, 'BAD_REQUEST')
