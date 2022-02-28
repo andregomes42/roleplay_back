@@ -40,6 +40,10 @@ export default class DungeonsRequestsController {
     
     public async update({ request, response, bouncer }: HttpContextContract) {
         const { status } = request.qs()
+        
+        if(!status) throw new BadRequest('The field status is required', 422)
+        if((status !== 'accepted' && status !== 'rejected')) throw new BadRequest('The field status is invalid', 422)
+
         const dungeon_request_id = request.param('dungeon_request')
 
         const dungeon_request = await DungeonRequest.findOrFail(dungeon_request_id)
@@ -47,6 +51,8 @@ export default class DungeonsRequestsController {
         await dungeon_request.load('dungeon', (query) => {
             query.select('id', 'master_id')
         })
+
+        await bouncer.authorize('answerRequest', dungeon_request)
 
         await dungeon_request.merge({ status }).save()     
 

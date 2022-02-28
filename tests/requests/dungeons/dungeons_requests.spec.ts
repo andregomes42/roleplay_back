@@ -146,6 +146,57 @@ test.group('Dungeons Requests', (group) => {
         assert.equal(dungeon.players[0].id, user.id)
     })
 
+    test('it return 401 when user is not authenticated', async (assert) => {
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=accepted`)
+            .send({}).expect(401)
+
+        assert.equal(body.status, 401)
+        assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 403 when user is not the dungeon master', async (assert) => {
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=accepted`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(403)
+
+        assert.equal(body.status, 403)
+        assert.equal(body.code, 'FORBIDDEN_ACCESS')
+    })
+
+    test('it return 404 when user is not the dungeon request is not persisted', async (assert) => {
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).makeStubbed()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=accepted`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
+    test('it return 422 when status is not provided', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it return 422 when provides an invalid status', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=${ user.username }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(422)
+
+        assert.equal(body.status, 422)
+        assert.equal(body.code, 'BAD_REQUEST')
+    })
+
     group.afterEach(async () => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ token }`)
