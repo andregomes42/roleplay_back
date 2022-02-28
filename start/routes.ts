@@ -34,4 +34,11 @@ Route.group(() => {
 
   Route.post('/login', 'AuthController.login')
   Route.delete('/logout', 'AuthController.logout')
+
+  Route.group(() => {
+    Route.post('', 'DungeonsController.store')
+    Route.get('/:dungeon/requests', 'DungeonsRequestsController.index')
+    Route.post('/:dungeon/requests', 'DungeonsRequestsController.store')
+    Route.patch('/requests/:dungeon_request', 'DungeonsRequestsController.update')
+  }).middleware('auth').prefix('/dungeons')
 }).prefix('/api/v1')
