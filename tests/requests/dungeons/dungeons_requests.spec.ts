@@ -128,6 +128,24 @@ test.group('Dungeons Requests', (group) => {
         assert.equal(body.message, 'Resource not found')
     })
 
+    test('it POST /dungeons/requests/:dungeon_request?status=accepted', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
+        dungeon_request = await DungeonRequestFactory.merge({ dungeon_id: dungeon.id, user_id: user.id }).create()
+        const { body } = await supertest(BASE_URL).patch(`/dungeons/requests/${ dungeon_request.id }?status=accepted`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send({}).expect(200)
+
+        assert.equal(body.status, 'accepted')
+        assert.equal(body.dungeon_id, dungeon.id)
+        assert.equal(body.dungeon.master_id, user.id)
+
+        await dungeon.load('players')
+
+        assert.isNotEmpty(dungeon.players)
+        assert.equal(dungeon.players.length, 1)
+        assert.equal(dungeon.players[0].id, user.id)
+    })
+
     group.afterEach(async () => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ token }`)

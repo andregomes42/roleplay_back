@@ -37,4 +37,22 @@ export default class DungeonsRequestsController {
 
         return response.created(dungeon_request)
     }
+    
+    public async update({ request, response, bouncer }: HttpContextContract) {
+        const { status } = request.qs()
+        const dungeon_request_id = request.param('dungeon_request')
+
+        const dungeon_request = await DungeonRequest.findOrFail(dungeon_request_id)
+
+        await dungeon_request.load('dungeon', (query) => {
+            query.select('id', 'master_id')
+        })
+
+        await dungeon_request.merge({ status }).save()     
+
+        if(status === 'accepted') 
+            await dungeon_request.dungeon.related('players').attach([ dungeon_request.user_id ])
+
+        return response.ok(dungeon_request)
+    }
 }
