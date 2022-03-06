@@ -37,6 +37,8 @@ Route.group(() => {
 
   Route.group(() => {
     Route.post('', 'DungeonsController.store')
+    Route.put('/:dungeon', 'DungeonsController.update')
+
     Route.get('/:dungeon/requests', 'DungeonsRequestsController.index')
     Route.post('/:dungeon/requests', 'DungeonsRequestsController.store')
     Route.patch('/requests/:dungeon_request', 'DungeonsRequestsController.update')

@@ -8,6 +8,7 @@ import User from 'App/Models/User';
 
 import Bouncer from '@ioc:Adonis/Addons/Bouncer'
 import DungeonRequest from 'App/Models/DungeonRequest';
+import Dungeon from 'App/Models/Dungeon';
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +37,9 @@ export const { actions } = Bouncer.define('userUpdate', (user: User, updatedUser
 })
     .define('answerRequest', (user: User, dungeon_request: DungeonRequest) => {
         return user.id == dungeon_request.dungeon.master_id
+    })
+    .define('updateDungeon', (user: User, dungeon: Dungeon) => {
+        return user.id == dungeon.master_id
     })
 
 /*
