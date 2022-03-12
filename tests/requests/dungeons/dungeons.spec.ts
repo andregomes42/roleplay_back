@@ -33,8 +33,9 @@ test.group('Dungeons', (group) => {
         let { body } = await supertest(BASE_URL).get('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
             .send().expect(200)
-        console.log(body)
-        assert.equal(body.length, 10)
+        console.log(body.data)
+        assert.equal(body.data.length, 5)
+        assert.equal(body.meta.total, 10)
     })
 
     test('it return 401 when user is not authenticates', async(assert) => {
