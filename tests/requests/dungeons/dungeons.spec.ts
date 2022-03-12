@@ -1,3 +1,4 @@
+import Player from 'App/Models/Player';
 import test from 'japa'
 import supertest from 'supertest'
 import Database from '@ioc:Adonis/Lucid/Database'
@@ -5,6 +6,7 @@ const { faker } = require('@faker-js/faker');
 import { UserFactory } from 'Database/factories/user'
 import { DungeonFactory } from 'Database/factories/dungeon';
 import { PlayerFactory } from 'Database/factories/player';
+import Dungeon from 'App/Models/Dungeon';
 
 const BASE_URL = `http://${ process.env.HOST }:${ process.env.PORT }/api/v1`
 
@@ -201,6 +203,46 @@ test.group('Dungeons', (group) => {
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it DELETE /dungeons/:dungeon/', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).with('players', 3).create()
+        await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send().expect(204)
+
+        assert.isEmpty(await Player.all())
+        assert.isEmpty(await Dungeon.all())
+    })
+
+    test('it return 401 when user is not authenticated', async (assert) => {
+        dungeon = await DungeonFactory.merge({ master_id: user.id }).with('players', 3).create()
+        let { body } = await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }`)
+            .send().expect(401)
+
+
+        assert.equal(body.status, 401)
+        assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 404 when provides an invalid dungeon id', async (assert) => {
+         dungeon = await DungeonFactory.merge({ master_id: user.id }).with('players', 3).makeStubbed()
+        let { body } = await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send().expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
+    test('it return 403 when user is not the dungeon master', async (assert) => {
+        dungeon = await DungeonFactory.with('master').with('players').create()
+        let { body } = await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send().expect(403)
+
+        assert.equal(body.status, 403)
+        assert.equal(body.code, 'FORBIDDEN_ACCESS')
     })
 
     test('it DELETE /dungeons/:dungeon/players/:player', async (assert) => {

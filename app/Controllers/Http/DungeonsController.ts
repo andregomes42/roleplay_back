@@ -33,6 +33,16 @@ export default class DungeonsController {
         return response.ok(dungeon)
     }
 
+    public async destroy({ request, response, bouncer }: HttpContextContract) {
+        let dungeon_id = request.param('dungeon')
+
+        let dungeon = await Dungeon.findOrFail(dungeon_id)
+        await bouncer.authorize('updateDungeon', dungeon)
+
+        await dungeon.delete()
+        return response.noContent()
+    }
+
     public async removePlayer({ request, response, bouncer }: HttpContextContract) {
         let dungeon_id = request.param('dungeon')
         let player_id = Number(request.param('player'))
