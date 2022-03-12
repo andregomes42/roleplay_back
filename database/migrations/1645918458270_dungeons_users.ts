@@ -7,7 +7,7 @@ export default class DungeonsUsers extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.primary(['user_id', 'dungeon_id']),
       table.integer('user_id').unsigned().references('id').inTable('users').notNullable()
-      table.integer('dungeon_id').unsigned().references('id').inTable('dungeons').notNullable()
+      table.integer('dungeon_id').unsigned().references('id').inTable('dungeons').onDelete('CASCADE').notNullable()
     })
   }
 

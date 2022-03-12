@@ -12,7 +12,7 @@ const { faker } = require('@faker-js/faker');
 const BASE_URL = `http://${ process.env.HOST }:${ process.env.PORT }/api/v1`
 
 let user
-let makeUser
+let payload
 let random
 let token
 let date
@@ -43,12 +43,12 @@ test.group('Passwords', (group) => {
 
         Mail.restore()
 
-        const tokens = await user.related('tokens').query()
+        let tokens = await user.related('tokens').query()
         assert.isNotEmpty(tokens)
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/users/forgot-password')
+        let { body } = await supertest(BASE_URL).post('/users/forgot-password')
             .send({}).expect(422)
 
         assert.equal(body.status, 422)
@@ -56,7 +56,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when provides an invalid email', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
+        let { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
             email: user.username,
             resetPasswordUrl: user.avatar
         }).expect(422)
@@ -66,7 +66,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when provides an invalid reset password url', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
+        let { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
             email: user.email,
             resetPasswordUrl: user.username
         }).expect(422)
@@ -86,7 +86,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/users/reset-password')
             .send({}).expect(422)
 
         assert.equal(body.status, 422)
@@ -94,12 +94,12 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when provides an invalid password', async (assert) => {
-        makeUser = await UserFactory.apply('password').makeStubbed()
+        payload = await UserFactory.apply('password').makeStubbed()
         await user.related('tokens').create({ token })
 
-        const { body } = await supertest(BASE_URL).post('/users/reset-password').send({
+        let { body } = await supertest(BASE_URL).post('/users/reset-password').send({
             token,
-            password: makeUser.password
+            password: payload.password
         }).expect(422)
 
         assert.equal(body.status, 422)
@@ -112,7 +112,7 @@ test.group('Passwords', (group) => {
         await supertest(BASE_URL).post('/users/reset-password')
             .send({ token, password }).expect(204)
 
-        const { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/users/reset-password')
             .send({ token, password }).expect(404)
 
         assert.equal(body.status, 404)
@@ -123,7 +123,7 @@ test.group('Passwords', (group) => {
         date = DateTime.now().minus(Duration.fromISOTime('02:01'))
         await user.related('tokens').create({ token, createdAt: date })
 
-        const { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/users/reset-password')
             .send({ token, password }).expect(410)
 
         assert.equal(body.status, 410)
