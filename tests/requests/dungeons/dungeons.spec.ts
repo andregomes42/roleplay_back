@@ -14,6 +14,7 @@ let user
 let token
 let password
 let dungeon
+let payload
 
 test.group('Dungeons', (group) => {
     group.beforeEach(async () => {
@@ -26,14 +27,14 @@ test.group('Dungeons', (group) => {
         token = body.token.token
     })
 
-    test.only('it GET /dungeons', async (assert) => {
+    test('it GET /dungeons', async (assert) => {
         await PlayerFactory.merge({ user_id: user.id })
             .with('dungeon', 1, (dungeon) => dungeon.with('master'))
             .createMany(10);
         let { body } = await supertest(BASE_URL).get('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
             .send().expect(200)
-        console.log(body.data)
+        
         assert.equal(body.data.length, 5)
         assert.equal(body.meta.total, 10)
     })
@@ -127,7 +128,7 @@ test.group('Dungeons', (group) => {
 
     test('it PUT /dungeons/:dungeon', async (assert) => {
         dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
-        const payload = await DungeonFactory.makeStubbed()
+        payload = await DungeonFactory.makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(200)
@@ -140,7 +141,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 401 when user is not authenticated', async (assert) => {
         dungeon = await DungeonFactory.merge({ master_id: user.id }).create()
-        const payload = await DungeonFactory.makeStubbed()
+        payload = await DungeonFactory.makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .send(payload).expect(401)
 
@@ -150,7 +151,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 403 when user is not the dungeon master', async (assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.makeStubbed()
+        payload = await DungeonFactory.makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(403)
@@ -161,7 +162,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 404 when provides an invalid dungeon id', async (assert) => {
         dungeon = await DungeonFactory.with('master').makeStubbed()
-        const payload = await DungeonFactory.makeStubbed()
+        payload = await DungeonFactory.makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(404)
@@ -172,7 +173,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 422 when provides an invalid name', async(assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.apply('name').makeStubbed()
+        payload = await DungeonFactory.apply('name').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(422)
@@ -183,7 +184,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 422 when provides an invalid chronic', async(assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.apply('chronic').makeStubbed()
+        payload = await DungeonFactory.apply('chronic').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(422)
@@ -194,7 +195,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 422 when provides an invalid schedule', async(assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.apply('schedule').makeStubbed()
+        payload = await DungeonFactory.apply('schedule').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(422)
@@ -205,7 +206,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 422 when provides an invalid location', async(assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.apply('location').makeStubbed()
+        payload = await DungeonFactory.apply('location').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(422)
@@ -216,7 +217,7 @@ test.group('Dungeons', (group) => {
 
     test('it return 422 when provides an invalid description', async(assert) => {
         dungeon = await DungeonFactory.with('master').create()
-        const payload = await DungeonFactory.apply('description').makeStubbed()
+        payload = await DungeonFactory.apply('description').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/dungeons/${ dungeon.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(422)

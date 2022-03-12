@@ -16,13 +16,13 @@ test.group('Authentications', (group) => {
         await Database.beginGlobalTransaction()
         user = await UserFactory.merge({ password }).create()
 
-        const { body } = await supertest(BASE_URL).post('/login')
+        let { body } = await supertest(BASE_URL).post('/login')
             .send({ email: user.email, password }).expect(201)
         apiToken = body.token.token
     })  
 
     test('it POST /login', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/login')
+        let { body } = await supertest(BASE_URL).post('/login')
             .send({ email: user.email, password }).expect(201)
 
         assert.isDefined(body.user, 'User undefined')
@@ -32,7 +32,7 @@ test.group('Authentications', (group) => {
 
     test('it return 400 when provides an incorrect email', async (assert) => {
         user = await UserFactory.makeStubbed()
-        const { body } = await supertest(BASE_URL).post('/login')
+        let { body } = await supertest(BASE_URL).post('/login')
             .send({ email: user.email, password }).expect(400)
 
         assert.equal(body.status, 400)
@@ -40,7 +40,7 @@ test.group('Authentications', (group) => {
     })
 
     test('it return 400 when provides an incorrect password', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/login')
+        let { body } = await supertest(BASE_URL).post('/login')
             .send({ email: user.email, password: user.password }).expect(400)
 
         assert.equal(body.status, 400)
@@ -48,7 +48,7 @@ test.group('Authentications', (group) => {
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        const { body } = await supertest(BASE_URL).post('/login')
+        let { body } = await supertest(BASE_URL).post('/login')
             .send({}).expect(422)
 
         assert.equal(body.status, 422)
@@ -58,7 +58,7 @@ test.group('Authentications', (group) => {
     test('it POST /logout', async (assert) => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ apiToken }`).expect(200)
-        const token = await Database.query().select('*').from('api_tokens')
+        let token = await Database.query().select('*').from('api_tokens')
 
         assert.isEmpty(token)
     })
