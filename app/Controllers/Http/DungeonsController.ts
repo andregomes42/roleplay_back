@@ -4,6 +4,15 @@ import StoreDungeon from 'App/Validators/StoreDungeonValidator'
 import UpdateDungeon from 'App/Validators/UpdateDungeonValidator'
 
 export default class DungeonsController {
+    public async index({ response, auth }: HttpContextContract) {
+        const user_id = auth.user!.id
+        const dungeons = await Dungeon.query().whereHas('players', query => {
+            query.where('id', user_id)
+        }).preload('master')
+        
+        return response.ok(dungeons)
+    }
+
     public async store({ request, response, auth }: HttpContextContract) {
         const payload = await request.validate(StoreDungeon)
         const dungeon = await Dungeon.create({
@@ -34,9 +43,9 @@ export default class DungeonsController {
     }
 
     public async destroy({ request, response, bouncer }: HttpContextContract) {
-        let dungeon_id = request.param('dungeon')
+        const dungeon_id = request.param('dungeon')
 
-        let dungeon = await Dungeon.findOrFail(dungeon_id)
+        const dungeon = await Dungeon.findOrFail(dungeon_id)
         await bouncer.authorize('updateDungeon', dungeon)
 
         await dungeon.delete()
@@ -44,8 +53,8 @@ export default class DungeonsController {
     }
 
     public async removePlayer({ request, response, bouncer }: HttpContextContract) {
-        let dungeon_id = request.param('dungeon')
-        let player_id = Number(request.param('player'))
+        const dungeon_id = request.param('dungeon')
+        const player_id = Number(request.param('player'))
 
         let dungeon = await Dungeon.query().whereHas('players', (query) => {
             query.where('id', player_id)

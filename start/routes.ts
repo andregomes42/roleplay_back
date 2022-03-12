@@ -38,6 +38,7 @@ Route.group(() => {
   })
 
   Route.group(() => {
+    Route.get('', 'DungeonsController.index')
     Route.post('', 'DungeonsController.store')
     Route.put('/:dungeon', 'DungeonsController.update')
     Route.delete('/:dungeon', 'DungeonsController.destroy')
