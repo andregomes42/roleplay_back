@@ -1,3 +1,4 @@
+import Database from "@ioc:Adonis/Lucid/Database";
 import User from "App/Models/User";
 
 type UserType = {
@@ -9,15 +10,17 @@ type UserType = {
 
 class UserService {
     public async create(payload: UserType): Promise<User> {
-        return User.create(payload)
+        const trx = await Database.transaction()
+        const user = User.create(payload)
+        await trx.commit()
+
+        return user
     }
 
     public async update(payload: UserType, user: User): Promise<User> {
-        payload.email ? user.email = payload.email : false
-        payload.avatar ? user.avatar = payload.avatar : false
-        payload.username ? user.username = payload.username : false
-        payload.password ? user.password = payload.password : false
-        await user.save()
+        const trx = await Database.transaction()
+        await user.merge(payload).save()
+        await trx.commit()
 
         return user
     }

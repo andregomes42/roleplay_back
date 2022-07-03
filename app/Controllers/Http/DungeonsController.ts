@@ -6,12 +6,12 @@ import UpdateDungeon from 'App/Validators/UpdateDungeonValidator'
 export default class DungeonsController {
     public async index({ request, response, auth }: HttpContextContract) {
         const user_id = auth.user!.id
-        const page = request.input('page', 1)
+        const perPage = request.input('perPage', 1)
         const query = Dungeon.query().whereHas('players', query => {
             query.where('id', user_id)
         })
         
-        const dungeons = await query.preload('master').paginate(page, 5)
+        const dungeons = await query.preload('master').paginate(perPage, 5)
         return response.ok(dungeons)
     }
 

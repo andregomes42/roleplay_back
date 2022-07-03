@@ -23,7 +23,7 @@ export default class UsersController {
         const payload = await request.validate(UpdateUser)
         let user = await User.findOrFail(request.param('user'))
 
-        await bouncer.authorize('userUpdate', user)
+        await bouncer.authorize('check_user', user)
 
         if(payload.email && await User.findBy('email', payload.email))
             throw new BadRequest('email is arealdy in use', 409)

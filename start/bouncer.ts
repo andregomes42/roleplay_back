@@ -32,7 +32,7 @@ import Dungeon from 'App/Models/Dungeon';
 | NOTE: Always export the "actions" const from this file
 |****************************************************************
 */
-export const { actions } = Bouncer.define('userUpdate', (user: User, updatedUser: User) => {
+export const { actions } = Bouncer.define('check_user', (user: User, updatedUser: User) => {
     return user.id === updatedUser.id
 })
     .define('answerRequest', (user: User, dungeon_request: DungeonRequest) => {

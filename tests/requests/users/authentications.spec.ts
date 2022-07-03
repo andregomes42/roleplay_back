@@ -58,7 +58,7 @@ test.group('Authentications', (group) => {
     test('it POST /logout', async (assert) => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ apiToken }`).expect(200)
-        let token = await Database.query().select('*').from('api_tokens')
+        let token = await Database.query().select('*').from('api_tokens').where('token', apiToken)
 
         assert.isEmpty(token)
     })

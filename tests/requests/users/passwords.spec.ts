@@ -27,7 +27,7 @@ test.group('Passwords', (group) => {
         password = faker.internet.password()
     })
 
-    test('it POST /users/forgot/passsword', async (assert) => {
+    test('it POST /users/forgot-passsword', async (assert) => {
         Mail.trap((message) => {
             assert.deepEqual(message.from, { address: 'no-reply@roleplay.com' })
             assert.deepEqual(message.to, [{ address: user.email }])

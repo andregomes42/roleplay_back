@@ -5,4 +5,4 @@ Route.group(() => {
     Route.put('/:user', 'UsersController.update').middleware('auth')
     Route.post('/forgot-password', 'PasswordsController.forgot')
     Route.post('/reset-password', 'PasswordsController.reset')
-  }).prefix('/api/v1/users')
+}).prefix('/api/v1/users')

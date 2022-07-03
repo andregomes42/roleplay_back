@@ -148,15 +148,6 @@ test.group('Users', (group) => {
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it return 422 when no body is provided', async (assert) => {
-        let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
-            .set('Authorization', `Bearer ${ token }`)
-            .send({}).expect(422)
-
-        assert.equal(body.status, 422)
-        assert.equal(body.code, 'BAD_REQUEST')
-    })
-
     test('it return 422 when provides an invalid email', async (assert) => {
         user = await UserFactory.apply('email').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
