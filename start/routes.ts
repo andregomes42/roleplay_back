@@ -19,19 +19,13 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
+import './routes/users'
 
 Route.get('/', async () => {
   return { hello: 'world' }
 })
 
 Route.group(() => {
-  Route.group(() => {
-    Route.post('', 'UsersController.store')
-    Route.put('/:user', 'UsersController.update').middleware('auth')
-    Route.post('/forgot-password', 'PasswordsController.forgot')
-    Route.post('/reset-password', 'PasswordsController.reset')
-  }).prefix('/users')
-
   Route.group(() => {
     Route.post('/login', 'AuthController.login')
     Route.delete('/logout', 'AuthController.logout')
