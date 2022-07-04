@@ -85,9 +85,9 @@ test.group('Dungeons Requests', (group) => {
             .set('Authorization', `Bearer ${ token }`)
             .send({}).expect(200)
 
-        assert.equal(body[0].status, 'pending')
-        assert.equal(body[0].user_id, user.id)
-        assert.equal(body[0].dungeon_id, dungeon.id)
+        assert.equal(body.at(0).status, 'pending')
+        assert.equal(body.at(0).user_id, user.id)
+        assert.equal(body.at(0).dungeon_id, dungeon.id)
     })
 
     test('it return an empty list when master has no dungeon request', async (assert) => {
