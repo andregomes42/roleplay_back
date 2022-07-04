@@ -52,7 +52,7 @@ test.group('Users', (group) => {
 
     test('it returns 422 when no body is provided', async(assert) => {
         let { body } = await supertest(BASE_URL).post('/users')
-            .send({}).expect(422)
+            .send().expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -113,6 +113,17 @@ test.group('Users', (group) => {
 
         assert.equal(body.status, 401)
         assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
+    })
+
+    test('it return 404 when dungeons is not persisted', async (assert) => {
+        payload = await UserFactory.makeStubbed()
+        user = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send(payload).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
     })
 
     test('it return 403 when user has no permission to the action', async (assert) => {
@@ -186,6 +197,27 @@ test.group('Users', (group) => {
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it GET /users/:user', async (assert) => {
+        user = await UserFactory.create()
+        let { body } = await supertest(BASE_URL).get(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(200)
+
+        assert.equal(body.id, user.id)
+        assert.equal(body.email, user.email)
+        assert.equal(body.username, user.username)
+    })
+
+    test('it return 404 when dungeons is not persisted', async (assert) => {
+        user = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).get(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
     })
 
     group.afterEach(async () => {

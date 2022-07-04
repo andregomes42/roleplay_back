@@ -22,4 +22,10 @@ export default class UsersController {
 
         return response.ok(user)
     }
+
+    public async show({ request, response }: HttpContextContract) {
+        let user = await User.findOrFail(request.param('user'))
+
+        return response.ok(user)
+    }
 }
