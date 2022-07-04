@@ -21,10 +21,13 @@ export default class User extends BaseModel {
   public avatar: string
 
   @column.dateTime({ autoCreate: true })
-  public createdAt: DateTime
+  public created_at: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt: DateTime
+  public updated_at: DateTime
+
+  @column.dateTime()
+  public deleted_at: DateTime
 
   @hasMany(() => LinkToken, { foreignKey: 'user_id' })
   public tokens: HasMany<typeof LinkToken>

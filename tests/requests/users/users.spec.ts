@@ -220,6 +220,23 @@ test.group('Users', (group) => {
         assert.equal(body.message, 'Resource not found')
     })
 
+    test('it DELETE /users/:user', async () => {
+        await supertest(BASE_URL).delete(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(204)
+    })
+
+    test('it return 404 when dungeons is not persisted', async (assert) => {
+        user = await UserFactory.apply('deleted').create()
+
+        let { body } = await supertest(BASE_URL).delete(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
     group.afterEach(async () => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ token }`)
