@@ -34,7 +34,7 @@ test.group('Dungeons', (group) => {
         let { body } = await supertest(BASE_URL).get('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
             .send().expect(200)
-        
+
         assert.equal(body.data.length, 5)
         assert.equal(body.meta.total, 10)
     })
