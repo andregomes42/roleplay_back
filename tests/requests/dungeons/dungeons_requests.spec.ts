@@ -142,7 +142,7 @@ test.group('Dungeons Requests', (group) => {
 
         assert.isNotEmpty(dungeon.players)
         assert.equal(dungeon.players.length, 1)
-        assert.equal(dungeon.players[0].id, user.id)
+        assert.equal(dungeon.players.at(0).id, user.id)
     })
 
     test('it PATCH /dungeons/requests/:dungeon_request?status=rejected', async (assert) => {

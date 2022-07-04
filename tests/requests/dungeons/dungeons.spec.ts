@@ -55,7 +55,7 @@ test.group('Dungeons', (group) => {
 
         assert.equal(body.master_id, user.id)
         assert.equal(body.name, dungeon.name)
-        assert.equal(body.players[0].id, user.id)
+        assert.equal(body.players.at(0).id, user.id)
     })
 
     test('it return 401 when user is not authenticated', async (assert) => {
@@ -271,7 +271,7 @@ test.group('Dungeons', (group) => {
         await PlayerFactory.merge({ user_id: user.id, dungeon_id: dungeon.id }).create()
         await PlayerFactory.merge({ dungeon_id: dungeon.id }).with('user').createMany(2)
         await dungeon.load('players')
-        let player = dungeon.players[2]
+        let player = dungeon.players.at(2)
         let { body } = await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }/players/${ player.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send().expect(200)
