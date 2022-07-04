@@ -32,21 +32,21 @@ test.group('Users', (group) => {
         assert.equal(body.email, user.email)
     })
 
-    test('it return 409 when email is arelady in use', async(assert) => {
+    test('it return 422 when email is arelady in use', async(assert) => {
         user = await UserFactory.merge({ email: user.email }).makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(409)
+            .send(user).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it return 409 when username is arelady in use', async(assert) => {
+    test('it return 422 when username is arelady in use', async(assert) => {
         user = await UserFactory.merge({ username: user.username }).makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(409)
+            .send(user).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
@@ -126,25 +126,25 @@ test.group('Users', (group) => {
         assert.equal(body.code, 'FORBIDDEN_ACCESS')
     })
 
-    test('it return 409 when email is already in use', async (assert) => {
+    test('it return 422 when email is already in use', async (assert) => {
         let sUser = await UserFactory.create()
         payload = await UserFactory.merge({ email: sUser.email }).makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(payload).expect(409)
+            .send(payload).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it return 409 when username is already in use', async (assert) => {
+    test('it return 422 when username is already in use', async (assert) => {
         let sUser = await UserFactory.create()
         payload = await UserFactory.merge({ username: sUser.username }).makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(payload).expect(409)
+            .send(payload).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
