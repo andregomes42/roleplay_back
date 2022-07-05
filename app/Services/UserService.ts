@@ -10,12 +10,12 @@ type UserType = {
 }
 
 class UserService {
-    public async index(perPage: number, search: string): Promise<ModelPaginatorContract<User>> {
+    public async index(search: string, page: number, perPage: number): Promise<ModelPaginatorContract<User>> {
         const query = User.query().if(search, (subQuery) => {
             subQuery.where('username', 'ILIKE', `%${search}%`)
         }).whereNull('deleted_at')
         
-        return await query.paginate(perPage, 5)
+        return await query.paginate(page, perPage)
     }
 
     public async create(payload: UserType): Promise<User> {

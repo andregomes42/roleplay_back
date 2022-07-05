@@ -26,16 +26,19 @@ test.group('Users', (group) => {
     test('it GET /users', async (assert) => {
         await UserFactory.createMany(10)
         let { body } = await supertest(BASE_URL).get('/users')
+            .query({ 'perPage': 10 })
             .send(user).expect(200)
 
-        assert.lengthOf(body.data, 5)
+        
+        assert.lengthOf(body.data, 10)
         assert.isAtLeast(body.meta.total, 10)
     })
     
     test('it GET /users?search', async (assert) => {
         await UserFactory.createMany(10)
         user = await UserFactory.create()
-        let { body } = await supertest(BASE_URL).get(`/users?search=${ user.username }`)
+        let { body } = await supertest(BASE_URL).get('/users')
+            .query({ 'search': user.username })
             .send(user).expect(200)
 
         assert.isAtMost(body.meta.total, 10)

@@ -8,7 +8,11 @@ import { DateTime } from 'luxon'
 
 export default class UsersController {
     public async index({ request, response }: HttpContextContract) {
-        const users = await UserService.index(request.input('perPage', 1), request.input('search'))
+        const users = await UserService.index(
+            request.input('search'),
+            request.input('page', 1),
+            request.input('perPage', 999))
+            
         return response.ok(users)
     }
 
