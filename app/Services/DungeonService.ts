@@ -12,13 +12,14 @@ type DungeonsType =  {
 
 
 class DungeonService {
-    public async index(user_id: number, perPage: number): Promise<ModelPaginatorContract<Dungeon>> {
-        const query = Dungeon.query().whereHas('players', query => {
+    public async index(user_id: number, search: string, page: number, perPage: number): Promise<ModelPaginatorContract<Dungeon>> {
+        const query = Dungeon.query().if(search, (subQuery) => {
+            subQuery.where('name', 'ILIKE', `%${ search }%`)
+        }).whereHas('players', query => {
             query.where('id', user_id)
         })
         
-        const dungeons = await query.preload('master').paginate(perPage, 5)
-        return dungeons
+        return await query.preload('master').paginate(page, perPage)
     }
 
     public async store(payload: DungeonsType, user_id: number): Promise<Dungeon> {

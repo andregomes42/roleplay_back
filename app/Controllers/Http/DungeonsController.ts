@@ -6,10 +6,11 @@ import UpdateDungeon from 'App/Validators/UpdateDungeonValidator'
 
 export default class DungeonsController {
     public async index({ request, response, auth }: HttpContextContract) {
-        const user_id = auth.user!.id
-        const perPage = request.input('perPage', 1)
-
-        const dungeons = await DungeonService.index(user_id, perPage)
+        const dungeons = await DungeonService.index(
+            auth.user!.id,
+            request.input('search'),
+            request.input('page', 1),
+            request.input('perPage', 999))
         
         return response.ok(dungeons)
     }

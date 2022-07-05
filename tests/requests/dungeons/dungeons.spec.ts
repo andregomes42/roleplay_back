@@ -30,16 +30,33 @@ test.group('Dungeons', (group) => {
     test('it GET /dungeons', async (assert) => {
         await PlayerFactory.merge({ user_id: user.id })
             .with('dungeon', 1, (dungeon) => dungeon.with('master'))
-            .createMany(10);
+            .createMany(10)
         let { body } = await supertest(BASE_URL).get('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
+            .query({ 'perPage': 10 })
             .send().expect(200)
 
-        assert.equal(body.data.length, 5)
-        assert.equal(body.meta.total, 10)
+        assert.lengthOf(body.data, 10)
+        assert.isAtLeast(body.meta.total, 10)
     })
 
-    test('it return 401 when user is not authenticates', async(assert) => {
+    test('it GET /dungeons?search', async (assert) => {
+        await PlayerFactory.merge({ user_id: user.id })
+            .with('dungeon', 1, (dungeon) => dungeon.with('master'))
+            .createMany(10)
+        let { dungeon } = await PlayerFactory.merge({ user_id: user.id })
+            .with('dungeon', 1, (dungeon) => dungeon.with('master')).create()
+
+        let { body } = await supertest(BASE_URL).get('/dungeons')
+            .set('Authorization', `Bearer ${ token }`)
+            .query({ 'search': dungeon.name })
+            .query({ 'perPage': 10 })
+            .send().expect(200)
+
+        assert.isAtMost(body.meta.total, 10)
+    })
+
+    test('it return 401 when user is not authenticated', async(assert) => {
         let { body } = await supertest(BASE_URL).get('/dungeons')
             .send().expect(401)
 
@@ -70,7 +87,7 @@ test.group('Dungeons', (group) => {
     test('it returns 422 when no body is provided', async(assert) => {
         let { body } = await supertest(BASE_URL).post('/dungeons')
             .set('Authorization', `Bearer ${ token }`)
-            .send({}).expect(422)
+            .send().expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -241,7 +258,6 @@ test.group('Dungeons', (group) => {
         let { body } = await supertest(BASE_URL).delete(`/dungeons/${ dungeon.id }`)
             .send().expect(401)
 
-
         assert.equal(body.status, 401)
         assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
     })
@@ -277,7 +293,7 @@ test.group('Dungeons', (group) => {
             .send().expect(200)
 
         assert.isNotEmpty(body.players)
-        assert.equal(body.players.length, 2)
+        assert.lengthOf(body.players, 2)
     })
 
     test('it return 401 when user is not authenticated', async (assert) => {
