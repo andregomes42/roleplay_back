@@ -49,7 +49,7 @@ test.group('Authentications', (group) => {
 
     test('it return 422 when no body is provided', async (assert) => {
         let { body } = await supertest(BASE_URL).post('/login')
-            .send({}).expect(422)
+            .send().expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
