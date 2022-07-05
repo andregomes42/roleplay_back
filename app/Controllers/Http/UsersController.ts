@@ -7,6 +7,11 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 
 export default class UsersController {
+    public async index({ request, response }: HttpContextContract) {
+        const users = await UserService.index(request.input('perPage', 1), request.input('search'))
+        return response.ok(users)
+    }
+
     public async store({ request, response }: HttpContextContract) {
         const payload = await request.validate(StoreUser)
 
