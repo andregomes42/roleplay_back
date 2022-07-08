@@ -27,7 +27,7 @@ test.group('Passwords', (group) => {
         password = faker.internet.password()
     })
 
-    test('it POST /users/forgot-passsword', async (assert) => {
+    test('it POST /forgot-passsword', async (assert) => {
         Mail.trap((message) => {
             assert.deepEqual(message.from, { address: 'no-reply@roleplay.com' })
             assert.deepEqual(message.to, [{ address: user.email }])
@@ -36,7 +36,7 @@ test.group('Passwords', (group) => {
             assert.include(message.html, user.avatar)
         })
         
-        await supertest(BASE_URL).post('/users/forgot-password').send({
+        await supertest(BASE_URL).post('/forgot-password').send({
             email: user.email,
             resetPasswordUrl: user.avatar
         }).expect(204)
@@ -48,7 +48,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        let { body } = await supertest(BASE_URL).post('/users/forgot-password')
+        let { body } = await supertest(BASE_URL).post('/forgot-password')
             .send().expect(422)
 
         assert.equal(body.status, 422)
@@ -56,7 +56,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when provides an invalid email', async (assert) => {
-        let { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
+        let { body } = await supertest(BASE_URL).post('/forgot-password').send({
             email: user.username,
             resetPasswordUrl: user.avatar
         }).expect(422)
@@ -66,7 +66,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when provides an invalid reset password url', async (assert) => {
-        let { body } = await supertest(BASE_URL).post('/users/forgot-password').send({
+        let { body } = await supertest(BASE_URL).post('/forgot-password').send({
             email: user.email,
             resetPasswordUrl: user.username
         }).expect(422)
@@ -75,10 +75,10 @@ test.group('Passwords', (group) => {
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it POST /users/reset-password', async (assert) => {
+    test('it POST /reset-password', async (assert) => {
         await user.related('tokens').create({ token })
 
-        await supertest(BASE_URL).post('/users/reset-password')
+        await supertest(BASE_URL).post('/reset-password')
             .send({ token, password }).expect(204)
 
         await user.refresh()
@@ -86,7 +86,7 @@ test.group('Passwords', (group) => {
     })
 
     test('it return 422 when no body is provided', async (assert) => {
-        let { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/reset-password')
             .send().expect(422)
 
         assert.equal(body.status, 422)
@@ -97,7 +97,7 @@ test.group('Passwords', (group) => {
         payload = await UserFactory.apply('password').makeStubbed()
         await user.related('tokens').create({ token })
 
-        let { body } = await supertest(BASE_URL).post('/users/reset-password').send({
+        let { body } = await supertest(BASE_URL).post('/reset-password').send({
             token,
             password: payload.password
         }).expect(422)
@@ -109,10 +109,10 @@ test.group('Passwords', (group) => {
     test('it return 404 when using the same token twice', async (assert) => {
         await user.related('tokens').create({ token })
 
-        await supertest(BASE_URL).post('/users/reset-password')
+        await supertest(BASE_URL).post('/reset-password')
             .send({ token, password }).expect(204)
 
-        let { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/reset-password')
             .send({ token, password }).expect(404)
 
         assert.equal(body.status, 404)
@@ -123,7 +123,7 @@ test.group('Passwords', (group) => {
         date = DateTime.now().minus(Duration.fromISOTime('02:01'))
         await user.related('tokens').create({ token, createdAt: date })
 
-        let { body } = await supertest(BASE_URL).post('/users/reset-password')
+        let { body } = await supertest(BASE_URL).post('/reset-password')
             .send({ token, password }).expect(410)
 
         assert.equal(body.status, 410)
