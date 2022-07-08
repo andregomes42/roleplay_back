@@ -13,7 +13,7 @@ class UserService {
     public async index(search: string, page: number, perPage: number): Promise<ModelPaginatorContract<User>> {
         const query = User.query().if(search, (subQuery) => {
             subQuery.where('username', 'ILIKE', `%${search}%`)
-        }).whereNull('deleted_at')
+        })
         
         return await query.paginate(page, perPage)
     }

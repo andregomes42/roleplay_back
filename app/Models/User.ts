@@ -26,9 +26,6 @@ export default class User extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updated_at: DateTime
 
-  @column.dateTime()
-  public deleted_at: DateTime
-
   @hasMany(() => LinkToken, { foreignKey: 'user_id' })
   public tokens: HasMany<typeof LinkToken>
 
