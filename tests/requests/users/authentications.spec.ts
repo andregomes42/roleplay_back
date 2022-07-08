@@ -49,7 +49,7 @@ test.group('Authentications', (group) => {
 
     test('it return 422 when no body is provided', async (assert) => {
         let { body } = await supertest(BASE_URL).post('/login')
-            .send({}).expect(422)
+            .send().expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -58,7 +58,7 @@ test.group('Authentications', (group) => {
     test('it POST /logout', async (assert) => {
         await supertest(BASE_URL).delete('/logout')
             .set('Authorization', `Bearer ${ apiToken }`).expect(200)
-        let token = await Database.query().select('*').from('api_tokens')
+        let token = await Database.query().select('*').from('api_tokens').where('token', apiToken)
 
         assert.isEmpty(token)
     })

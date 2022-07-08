@@ -1,34 +1,25 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Dungeon from 'App/Models/Dungeon'
+import DungeonService from 'App/Services/DungeonService'
 import StoreDungeon from 'App/Validators/StoreDungeonValidator'
 import UpdateDungeon from 'App/Validators/UpdateDungeonValidator'
 
 export default class DungeonsController {
     public async index({ request, response, auth }: HttpContextContract) {
-        const user_id = auth.user!.id
-        const page = request.input('page', 1)
-        const query = Dungeon.query().whereHas('players', query => {
-            query.where('id', user_id)
-        })
+        const dungeons = await DungeonService.index(
+            auth.user!.id,
+            request.input('search'),
+            request.input('page', 1),
+            request.input('perPage', 999))
         
-        const dungeons = await query.preload('master').paginate(page, 5)
         return response.ok(dungeons)
     }
 
     public async store({ request, response, auth }: HttpContextContract) {
         const payload = await request.validate(StoreDungeon)
-        const dungeon = await Dungeon.create({
-            master_id: auth.user?.id,
-            name: payload.name,
-            chronic: payload.chronic,
-            schedule: payload.schedule,
-            location: payload.location,
-            description: payload.description
-        })
-
-        await dungeon.related('players').attach([ dungeon.master_id ])
-        await dungeon.load('players')
         
+        const dungeon = await DungeonService.store(payload, auth.user!.id)
+
         return response.created(dungeon)
     }
 
@@ -38,9 +29,10 @@ export default class DungeonsController {
 
         let dungeon = await Dungeon.findOrFail(dungeon_id)
 
-        await bouncer.authorize('updateDungeon', dungeon)
+        await bouncer.authorize('dungeon_admin', dungeon)
 
-        dungeon = await dungeon.merge(payload).save()
+        dungeon = await DungeonService.update(payload, dungeon)
+
         return response.ok(dungeon)
     }
 
@@ -48,7 +40,7 @@ export default class DungeonsController {
         const dungeon_id = request.param('dungeon')
 
         const dungeon = await Dungeon.findOrFail(dungeon_id)
-        await bouncer.authorize('updateDungeon', dungeon)
+        await bouncer.authorize('dungeon_admin', dungeon)
 
         await dungeon.delete()
         return response.noContent()
@@ -62,15 +54,10 @@ export default class DungeonsController {
             query.where('id', player_id)
         }).andWhere('id', dungeon_id).preload('players').firstOrFail()
 
-        await bouncer.authorize('updateDungeon', dungeon)
+        await bouncer.authorize('dungeon_admin', dungeon)
 
-        if(player_id === dungeon.master_id) {
-            dungeon = await dungeon.merge({ master_id: dungeon.players[1].id }).save()
-            await dungeon.refresh()
-        }
-
-        await dungeon.related('players').detach([player_id])
-        await dungeon.load('players')
+        dungeon = await DungeonService.removePlayer(dungeon, player_id)
+        
         return response.ok(dungeon)
     }
 }

@@ -1,41 +1,49 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import BadRequest from 'App/Exceptions/BadRequestException'
 import StoreUser from 'App/Validators/StoreUserValidator'
 import UpdateUser from 'App/Validators/UpdateUserValidator'
+import UserService from 'App/Services/UserService'
 import User from 'App/Models/User'
 
 export default class UsersController {
+    public async index({ request, response }: HttpContextContract) {
+        const users = await UserService.index(
+            request.input('search'),
+            request.input('page', 1),
+            request.input('perPage', 999))
+            
+        return response.ok(users)
+    }
+
     public async store({ request, response }: HttpContextContract) {
         const payload = await request.validate(StoreUser)
 
-        if(await User.findBy('email', payload.email))
-            throw new BadRequest('email is arealdy in use', 409)
-
-        if(await User.findBy('username', payload.username))
-            throw new BadRequest('username is arealdy in use', 409)
-
-        const user = await User.create(payload)
+        const user = await UserService.create(payload)
         return response.created(user)
     }
 
     public async update({ request, response, bouncer }: HttpContextContract) {
         const payload = await request.validate(UpdateUser)
-        const user = await User.findOrFail(request.param('user'))
 
-        await bouncer.authorize('userUpdate', user)
+        let user = await User.findOrFail(request.param('user'))
+        await bouncer.authorize('check_user', user)
 
-         if(await User.findBy('email', payload.email))
-            throw new BadRequest('email is arealdy in use', 409)
-
-        if(await User.findBy('username', payload.username))
-            throw new BadRequest('username is arealdy in use', 409)
-
-        payload.email ? user.email = payload.email : false
-        payload.avatar ? user.avatar = payload.avatar : false
-        payload.username ? user.username = payload.username : false
-        payload.password ? user.password = payload.password : false
-        await user.save()
+        user = await UserService.update(payload, user)
 
         return response.ok(user)
+    }
+
+    public async show({ request, response }: HttpContextContract) {
+        let user = await User.findOrFail(request.param('user'))
+
+        return response.ok(user)
+    }
+
+    public async destroy({ request, response, bouncer }: HttpContextContract) {
+        let user = await User.findOrFail(request.param('user'))
+        await bouncer.authorize('check_user', user)
+
+        await user.delete()
+
+        return response.noContent()
     }
 }

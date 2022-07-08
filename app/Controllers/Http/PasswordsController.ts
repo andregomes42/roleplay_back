@@ -1,31 +1,16 @@
 import ForgotPassword from 'App/Validators/ForgotPasswordValidator'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Mail from '@ioc:Adonis/Addons/Mail'
 import User from 'App/Models/User'
-import { promisify } from 'util'
-import { randomBytes } from 'crypto'
 import ResetPassword from 'App/Validators/ResetPasswordValidator'
-import TokenExpired from 'App/Exceptions/TokenExpiredException'
+import PasswordService from 'App/Services/PasswordService'
 
 export default class PasswordsController {
     public async forgot({ request, response }: HttpContextContract) {
         const { email, resetPasswordUrl } = await request.validate(ForgotPassword)
         const user = await User.findByOrFail('email', email)
 
-        const random = await promisify(randomBytes)(24)
-        const token = random.toString('hex')
-        await user.related('tokens').updateOrCreate({ user_id: user.id }, { token }) 
-        
-        const resetPasswordUrlWithToken = `${ resetPasswordUrl }?token=${ token }`
-        await Mail.send((message) => {
-            message.from('no-reply@roleplay.com').to(email)
-            .subject('Roleplay: Reset password').htmlView('emails/forgot_password', {
-                productName: 'Roleplay',
-                name: user.username,
-                resetPasswordUrl: resetPasswordUrlWithToken
-            })
-        })
-        
+        await PasswordService.forgot(user, resetPasswordUrl)
+
         return response.noContent()
     }
 
@@ -35,14 +20,8 @@ export default class PasswordsController {
             query.where('token', token)
         }).preload('tokens').firstOrFail()
 
-        const tokenAge = Math.abs(user.tokens[0].createdAt.diffNow('hours').hours)
-        if(tokenAge > 2)
-            throw new TokenExpired()
+        await PasswordService.reset(user, password)
 
-        user.password = password
-        await user.save()
-        await user.tokens[0].delete()
-        
         return response.noContent()
     }
 }

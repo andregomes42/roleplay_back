@@ -21,74 +21,95 @@ test.group('Users', (group) => {
         let { body } = await supertest(BASE_URL).post('/login')
             .send({ email: user.email, password }).expect(201)
         token = body.token.token
-    })  
-
-    test('it POST /users', async (assert) => {
-        user = await UserFactory.makeStubbed()
-        let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(201)
-
-        assert.equal(body.username, user.username)
-        assert.equal(body.email, user.email)
     })
 
-    test('it return 409 when email is arelady in use', async(assert) => {
-        user = await UserFactory.merge({ email: user.email }).makeStubbed()
-        let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(409)
+    test('it GET /users', async (assert) => {
+        await UserFactory.createMany(10)
+        let { body } = await supertest(BASE_URL).get('/users')
+            .query({ 'perPage': 10 })
+            .send(user).expect(200)
 
-        assert.equal(body.status, 409)
+        
+        assert.lengthOf(body.data, 10)
+        assert.isAtLeast(body.meta.total, 10)
+    })
+    
+    test('it GET /users?search', async (assert) => {
+        await UserFactory.createMany(10)
+        user = await UserFactory.create()
+        let { body } = await supertest(BASE_URL).get('/users')
+            .query({ 'search': user.username })
+            .send(user).expect(200)
+
+        assert.isAtMost(body.meta.total, 10)
+    })
+
+    test('it POST /users', async (assert) => {
+        payload = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).post('/users')
+            .send(payload).expect(201)
+
+        assert.equal(body.username, payload.username)
+        assert.equal(body.email, payload.email)
+    })
+
+    test('it return 422 when email is arelady in use', async(assert) => {
+        payload = await UserFactory.merge({ email: user.email }).makeStubbed()
+        let { body } = await supertest(BASE_URL).post('/users')
+            .send(payload).expect(422)
+
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it return 409 when username is arelady in use', async(assert) => {
-        user = await UserFactory.merge({ username: user.username }).makeStubbed()
+    test('it return 422 when username is arelady in use', async(assert) => {
+        payload = await UserFactory.merge({ username: user.username }).makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(409)
+            .send(payload).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it returns 422 when no body is provided', async(assert) => {
         let { body } = await supertest(BASE_URL).post('/users')
-            .send({}).expect(422)
+            .send().expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid email', async(assert) => {
-        user = await UserFactory.apply('email').makeStubbed()
+        payload = await UserFactory.apply('email').makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid avatar', async(assert) => {
-        user = await UserFactory.apply('avatar').makeStubbed()
+        payload = await UserFactory.apply('avatar').makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid username', async(assert) => {
-        user = await UserFactory.apply('username').makeStubbed()
+        payload = await UserFactory.apply('username').makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid password', async(assert) => {
-        user = await UserFactory.apply('password').makeStubbed()
+        payload = await UserFactory.apply('password').makeStubbed()
         let { body } = await supertest(BASE_URL).post('/users')
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
@@ -115,9 +136,20 @@ test.group('Users', (group) => {
         assert.equal(body.code, 'UNAUTHORIZED_ACCESS')
     })
 
+    test('it return 404 when user is not persisted', async (assert) => {
+        payload = await UserFactory.makeStubbed()
+        user = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .send(payload).expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
     test('it return 403 when user has no permission to the action', async (assert) => {
         payload = await UserFactory.makeStubbed()
-        let user = await UserFactory.create()
+        user = await UserFactory.create()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
             .send(payload).expect(403)
@@ -126,75 +158,102 @@ test.group('Users', (group) => {
         assert.equal(body.code, 'FORBIDDEN_ACCESS')
     })
 
-    test('it return 409 when email is already in use', async (assert) => {
-        let sUser = await UserFactory.create()
-        payload = await UserFactory.merge({ email: sUser.email }).makeStubbed()
+    test('it return 422 when email is already in use', async (assert) => {
+        let other = await UserFactory.create()
+        payload = await UserFactory.merge({ email: other.email }).makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(payload).expect(409)
+            .send(payload).expect(422)
 
-        assert.equal(body.status, 409)
+        assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
-    test('it return 409 when username is already in use', async (assert) => {
-        let sUser = await UserFactory.create()
-        payload = await UserFactory.merge({ username: sUser.username }).makeStubbed()
+    test('it return 422 when username is already in use', async (assert) => {
+        let other = await UserFactory.create()
+        payload = await UserFactory.merge({ username: other.username }).makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(payload).expect(409)
-
-        assert.equal(body.status, 409)
-        assert.equal(body.code, 'BAD_REQUEST')
-    })
-
-    test('it return 422 when no body is provided', async (assert) => {
-        let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
-            .set('Authorization', `Bearer ${ token }`)
-            .send({}).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid email', async (assert) => {
-        user = await UserFactory.apply('email').makeStubbed()
+        payload = await UserFactory.apply('email').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid avatar', async (assert) => {
-        user = await UserFactory.apply('avatar').makeStubbed()
+        payload = await UserFactory.apply('avatar').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid username', async (assert) => {
-        user = await UserFactory.apply('username').makeStubbed()
+        payload = await UserFactory.apply('username').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
     })
 
     test('it return 422 when provides an invalid password', async (assert) => {
-        user = await UserFactory.apply('password').makeStubbed()
+        payload = await UserFactory.apply('password').makeStubbed()
         let { body } = await supertest(BASE_URL).put(`/users/${ user.id }`)
             .set('Authorization', `Bearer ${ token }`)
-            .send(user).expect(422)
+            .send(payload).expect(422)
 
         assert.equal(body.status, 422)
         assert.equal(body.code, 'BAD_REQUEST')
+    })
+
+    test('it GET /users/:user', async (assert) => {
+        let { body } = await supertest(BASE_URL).get(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(200)
+
+        assert.equal(body.id, user.id)
+        assert.equal(body.email, user.email)
+        assert.equal(body.username, user.username)
+    })
+
+    test('it return 404 when dungeons is not persisted', async (assert) => {
+        user = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).get(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
+    })
+
+    test('it DELETE /users/:user', async () => {
+        await supertest(BASE_URL).delete(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(204)
+    })
+
+    test('it return 404 when user is not persisted', async (assert) => {
+        user = await UserFactory.makeStubbed()
+        let { body } = await supertest(BASE_URL).delete(`/users/${ user.id }`)
+            .set('Authorization', `Bearer ${ token }`)
+            .expect(404)
+
+        assert.equal(body.status, 404)
+        assert.equal(body.message, 'Resource not found')
     })
 
     group.afterEach(async () => {

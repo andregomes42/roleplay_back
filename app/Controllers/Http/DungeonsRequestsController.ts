@@ -2,20 +2,20 @@ import BadRequest from 'App/Exceptions/BadRequestException';
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Dungeon from 'App/Models/Dungeon'
 import DungeonRequest from 'App/Models/DungeonRequest'
+import DungeonRequestService from 'App/Services/DungeonRequestService';
+import UpdateRequestValidator from 'App/Validators/UpdateRequestValidator';
 
 export default class DungeonsRequestsController {
-    public async index({ request, response, auth }: HttpContextContract) {
+    public async index({ request, response, auth, bouncer }: HttpContextContract) {
         const dungeon_id = request.param('dungeon')
         const user_id = auth.user!.id
 
         const dungeon = await Dungeon.findOrFail(dungeon_id)
-        if(dungeon.master_id !== user_id) throw new BadRequest('Resource not found', 404)
+        await bouncer.authorize('dungeon_admin', dungeon)
 
-        const solicitation = await DungeonRequest.query().whereHas('dungeon', (query) => {
-            query.where('master_id', user_id).andWhere('id', dungeon_id)
-        }).where('status', 'pending')
-
-        return response.ok(solicitation)
+        const solicitations = await DungeonRequestService.index(user_id, dungeon_id)
+        
+        return response.ok(solicitations)
     }
 
     public async store({ request, response, auth }: HttpContextContract) {
@@ -24,40 +24,25 @@ export default class DungeonsRequestsController {
 
         await Dungeon.findOrFail(dungeon_id)
         
-        const solicitation = await DungeonRequest.query().where('dungeon_id', dungeon_id).andWhere('user_id', user_id).first()
-        if(solicitation) throw new BadRequest('Dungeon request already exists', 409)
-        
-        const user_dungeons = await Dungeon.query().whereHas('players', (query) => {
-            query.where('id', user_id)
-        }).andWhere('id', dungeon_id).first()
-        if(user_dungeons) throw new BadRequest('User is already in the dungeon', 409)
-
-        const dungeon_request = await DungeonRequest.create({ user_id, dungeon_id })
-        await dungeon_request.refresh()
+        const dungeon_request = await DungeonRequestService.store(user_id, dungeon_id)
 
         return response.created(dungeon_request)
     }
     
     public async update({ request, response, bouncer }: HttpContextContract) {
-        const { status } = request.qs()
-        
-        if(!status) throw new BadRequest('The field status is required', 422)
-        if((status !== 'accepted' && status !== 'rejected')) throw new BadRequest('The field status is invalid', 422)
+        const { status } = await request.validate(UpdateRequestValidator)
 
         const dungeon_request_id = request.param('dungeon_request')
 
-        const dungeon_request = await DungeonRequest.findOrFail(dungeon_request_id)
+        let dungeon_request = await DungeonRequest.findOrFail(dungeon_request_id)
 
         await dungeon_request.load('dungeon', (query) => {
             query.select('id', 'master_id')
         })
 
-        await bouncer.authorize('answerRequest', dungeon_request)
+        await bouncer.authorize('answer_request', dungeon_request)
 
-        await dungeon_request.merge({ status }).save()     
-
-        if(status === 'accepted') 
-            await dungeon_request.dungeon.related('players').attach([ dungeon_request.user_id ])
+       dungeon_request = await DungeonRequestService.update(dungeon_request, status)
 
         return response.ok(dungeon_request)
     }
