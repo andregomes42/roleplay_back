@@ -3,14 +3,15 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Dungeon from 'App/Models/Dungeon'
 import DungeonRequest from 'App/Models/DungeonRequest'
 import DungeonRequestService from 'App/Services/DungeonRequestService';
+import UpdateRequestValidator from 'App/Validators/UpdateRequestValidator';
 
 export default class DungeonsRequestsController {
-    public async index({ request, response, auth }: HttpContextContract) {
+    public async index({ request, response, auth, bouncer }: HttpContextContract) {
         const dungeon_id = request.param('dungeon')
         const user_id = auth.user!.id
 
         const dungeon = await Dungeon.findOrFail(dungeon_id)
-        if(dungeon.master_id !== user_id) throw new BadRequest('Resource not found', 404)
+        await bouncer.authorize('dungeon_admin', dungeon)
 
         const solicitations = await DungeonRequestService.index(user_id, dungeon_id)
         
@@ -29,10 +30,7 @@ export default class DungeonsRequestsController {
     }
     
     public async update({ request, response, bouncer }: HttpContextContract) {
-        const { status } = request.qs()
-        
-        if(!status) throw new BadRequest('The field status is required', 422)
-        if((status !== 'accepted' && status !== 'rejected')) throw new BadRequest('The field status is invalid', 422)
+        const { status } = await request.validate(UpdateRequestValidator)
 
         const dungeon_request_id = request.param('dungeon_request')
 

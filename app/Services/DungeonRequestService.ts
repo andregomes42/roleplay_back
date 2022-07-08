@@ -23,8 +23,10 @@ class DungeonRequestService {
         }).andWhere('id', dungeon_id).first()
         if(user_dungeons) throw new BadRequest('User is already in the dungeon', 409)
 
+        const trx = await Database.transaction()
         const dungeon_request = await DungeonRequest.create({ user_id, dungeon_id })
         await dungeon_request.refresh()
+        await trx.commit()
 
         return dungeon_request
     }
